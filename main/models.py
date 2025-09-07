@@ -10,7 +10,7 @@ class Item(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)                # Nama item
+    name = models.CharField(max_length=255)                # nama item
     price = models.IntegerField()                          # Harga item
     stock = models.PositiveIntegerField(default=0)         # Stok item
     brand = models.CharField(max_length=100)               # Brand (misal: Adidas, Nike)
