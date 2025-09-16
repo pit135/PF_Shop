@@ -88,13 +88,13 @@ if PRODUCTION:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME'),
-            'USER': os.getenv('DB_USER'),
-            'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '5432'),
+            'NAME': os.getenv('petrus.wermasaubun'),
+            'USER': os.getenv('petrus.wermasaubun'),
+            'PASSWORD': os.getenv('VvZ1OQ7x'),
+            'HOST': os.getenv('152.118.29.139'),
+            'PORT': os.getenv('5432'),
             'OPTIONS': {
-                'options': f"-c search_path={os.getenv('DB_SCHEMA', 'public')}"
+                'options': f"-c search_path={os.getenv('tugas_individu', 'public')}"
             }
         }
     }
