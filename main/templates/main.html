@@ -1,4 +1,5 @@
  {% extends 'base.html' %}
+ {% load humanize %}
  {% block content %}
  
 <h1>Item Catalog</h1>
@@ -28,7 +29,7 @@
     {% if item.is_featured %} | <b>Featured</b>{% endif %}
     {% if item.size %} | Size: {{ item.size }}{% endif %}
     | Brand: {{ item.brand }}
-    | Price: Rp{{ item.price }}
+    | Price: Rp{{ item.price|intcomma }}
     | Stock: {{ item.stock }}
     | <i>{{ item.created_at|date:"d M Y H:i" }}</i>
   </p>
