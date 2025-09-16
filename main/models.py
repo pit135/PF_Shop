@@ -20,6 +20,3 @@ class Item(models.Model):
     description = models.TextField()                       # Deskripsi
     thumbnail = models.URLField(blank=True, null=True)     # Link gambar
     created_at = models.DateTimeField(auto_now_add=True)   # Otomatis isi waktu dibuat
-
-    def __str__(self):
-        return f"{self.name} - Rp{self.price:,}"

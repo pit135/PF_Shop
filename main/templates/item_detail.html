@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<p><a href="{% url 'main:show_main' %}"><button>← Back to Item List</button></a></p>
+
+<h1>{{ item.name }}</h1>
+<p>
+  <b>{{ item.get_category_display }}</b>
+  {% if item.is_featured %} | <b>Featured</b>{% endif %}
+  {% if item.size %} | Size: {{ item.size }}{% endif %}
+  | Brand: {{ item.brand }}
+  | Price: Rp{{ item.price|intcomma }}
+  | Stock: {{ item.stock }}
+  | <i>{{ item.created_at|date:"d M Y, H:i" }}</i>
+</p>
+
+{% if item.thumbnail %}
+  <img src="{{ item.thumbnail }}" alt="Item thumbnail" width="300">
+  <br><br>
+{% endif %}
+
+<div>
+  {{ item.description|linebreaks }}
+</div>
+{% endblock content %}

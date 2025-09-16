@@ -1,6 +1,50 @@
-<h1>PF_Shop</h1>
+ {% extends 'base.html' %}
+ {% block content %}
+ 
+<h1>Item Catalog</h1>
 
-<h5>Name: </h5>
+<h5>Name:</h5>
 <p>{{ name }}</p>
-<h5>Class: </h5>
-<p>{{ class }}</p> 
+
+<h5>Class:</h5>
+<p>{{ class }}</p>
+
+<a href="{% url 'main:create_item' %}">
+  <button>+ Add Item</button>
+</a>
+
+<hr>
+
+{% if not item_list %}
+  <p>Belum ada data item.</p>
+{% else %}
+
+{% for item in item_list %}
+<div>
+  <h2><a href="{% url 'main:show_item' item.id %}">{{ item.name }}</a></h2>
+
+  <p>
+    <b>{{ item.get_category_display }}</b>
+    {% if item.is_featured %} | <b>Featured</b>{% endif %}
+    {% if item.size %} | Size: {{ item.size }}{% endif %}
+    | Brand: {{ item.brand }}
+    | Price: Rp{{ item.price|intcomma }}
+    | Stock: {{ item.stock }}
+    | <i>{{ item.created_at|date:"d M Y H:i" }}</i>
+  </p>
+
+  {% if item.thumbnail %}
+    <img src="{{ item.thumbnail }}" alt="thumbnail" width="150" height="100"><br />
+  {% endif %}
+
+  <p>{{ item.description|truncatewords:25 }}...</p>
+
+  <p><a href="{% url 'main:show_item' item.id %}"><button>Detail</button></a></p>
+</div>
+
+<hr>
+{% endfor %}
+
+{% endif %}
+
+{% endblock content %}
