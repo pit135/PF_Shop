@@ -20,9 +20,12 @@ def create_item(request):
     if request.method == "POST":
         form = ItemForm(request.POST)
         if form.is_valid():
-            obj = form.save()
-            messages.success(request, "Item berhasil ditambahkan.")
-            return redirect("main:show_item", id=obj.pk)  # PRG: redirect ke detail
+            obj = form.save(commit=False)
+            # pastikan set field yang dipakai filter list
+            if request.user.is_authenticated:
+                obj.user = request.user
+            obj.save()
+            return redirect("main:show_item", obj.id)
     else:
         form = ItemForm()
     return render(request, "add_item.html", {"form": form})
