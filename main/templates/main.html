@@ -16,10 +16,11 @@
 
 <hr>
 
+{% if not item_list %}
   <p>Belum ada data item.</p>
 {% else %}
 
-{% for item in item_list %}
+{% for item in item_detail %}
 <div>
   <h2><a href="{% url 'main:show_item' item.id %}">{{ item.name }}</a></h2>
 
