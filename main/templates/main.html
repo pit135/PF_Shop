@@ -2,7 +2,7 @@
  {% load humanize %}
  {% block content %}
  
-<h1>Item Catalog</h1>
+<h1>PF Shop</h1>
 
 <h5>Name:</h5>
 <p>{{ name }}</p>
@@ -20,7 +20,7 @@
   <p>Belum ada data item.</p>
 {% else %}
 
-{% for item in item_detail %}
+{% for item in item_list %}
 <div>
   <h2><a href="{% url 'main:show_item' item.id %}">{{ item.name }}</a></h2>
 

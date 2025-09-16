@@ -20,12 +20,9 @@ def create_item(request):
     if request.method == "POST":
         form = ItemForm(request.POST)
         if form.is_valid():
-            obj = form.save(commit=False)
-            # pastikan set field yang dipakai filter list
-            if request.user.is_authenticated:
-                obj.user = request.user
-            obj.save()
-            return redirect("main:show_item", obj.id)
+            obj = form.save()
+            messages.success(request, "Item berhasil ditambahkan.")
+            return redirect("main:show_item", id=obj.pk)  # PRG: redirect ke detail
     else:
         form = ItemForm()
     return render(request, "add_item.html", {"form": form})
@@ -54,18 +51,3 @@ def show_json_by_id(request, id):
     json_data = serializers.serialize("json", [item])    # bungkus list untuk serialize satu objek
     return HttpResponse(json_data, content_type="application/json")
 
-def show_xml_by_id(request, id):
-    try:
-        item = Item.objects.get(pk=id)
-    except Item.DoesNotExist:
-        return HttpResponse(status=404)
-    xml_data = serializers.serialize("xml", [item])
-    return HttpResponse(xml_data, content_type="application/xml")
-
-def show_json_by_id(request, id):
-    try:
-        item = Item.objects.get(pk=id)
-    except Item.DoesNotExist:
-        return HttpResponse(status=404)
-    json_data = serializers.serialize("json", [item])
-    return HttpResponse(json_data, content_type="application/json")
