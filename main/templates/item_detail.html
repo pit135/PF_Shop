@@ -4,15 +4,15 @@
 <p><a href="{% url 'main:show_main' %}"><button>← Back to Item List</button></a></p>
 
 <h1>{{ item.name }}</h1>
-<p>
-  <b>{{ item.get_category_display }}</b>
-  {% if item.is_featured %} | <b>Featured</b>{% endif %}
-  {% if item.size %} | Size: {{ item.size }}{% endif %}
-  | Brand: {{ item.brand }}
-  | Price: Rp{{ item.price|intcomma }}
-  | Stock: {{ item.stock }}
-  | <i>{{ item.created_at|date:"d M Y, H:i" }}</i>
-</p>
+<div class="meta">
+  <p><strong>Category:</strong> {{ item.get_category_display }}</p>
+  {% if item.is_featured %}<p><strong>Featured:</strong> Yes</p>{% endif %}
+  {% if item.size %}<p><strong>Size:</strong> {{ item.size }}</p>{% endif %}
+  <p><strong>Brand:</strong> {{ item.brand }}</p>
+  <p><strong>Price:</strong> Rp{{ item.price }}</p>
+  <p><strong>Stock:</strong> {{ item.stock }}</p>
+  <p><strong>Created:</strong> <i>{{ item.created_at|date:"d M Y, H:i" }}</i></p>
+</div>
 
 {% if item.thumbnail %}
   <img src="{{ item.thumbnail }}" alt="Item thumbnail" width="300">
