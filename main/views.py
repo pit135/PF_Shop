@@ -23,7 +23,7 @@ def create_item(request):
             return redirect("main:show_item", id=obj.pk)  # PRG: redirect ke detail
     else:
         form = ItemForm()
-    return render(request, "shop/item_form.html", {"form": form})
+    return render(request, "add_item.html", {"form": form})
 
 def show_item(request, id):
     item = get_object_or_404(Item, pk=id)  # id = UUID
