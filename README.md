@@ -1193,5 +1193,5 @@ MAKASIII BANYAK BANYAK KAAA...
 
 ![json postman](json.jpg)
 ![xml postman](xml.jpg)
-![json postman with news id](json_w_news_id.jpg)
-![xml postman with news id](xml_w_news_id.jpg)
+![json postman with news id](jsonwnewsid.jpg)
+![xml postman with news id](xmlwnewsid.jpg)
