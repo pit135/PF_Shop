@@ -662,3 +662,536 @@ Cukup beberapa baris kode, pemula sudah bisa melihat aplikasi berjalan di browse
 
 Repo: https://github.com/pit135/PF_Shop.git
 Web: https://petrus-wermasaubun-footballshoppp.pbp.cs.ui.ac.id/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================= TUGAS 3 ==================================================================
+
+1. Tambahkan 4 fungsi views baru untuk melihat objek yang sudah ditambahkan dalam format XML, JSON, XML by ID, dan JSON by ID.
+=> Tambahkan fungsi di main/views.py
+
+a) Import yang diperlukan
+Kenapa butuh ini?
+- serializers untuk mengubah QuerySet → XML/JSON bawaan Django
+- HttpResponse/JsonResponse untuk mengembalikan response dengan content-type yang tepat
+- get_object_or_404 agar ID yang tidak ada langsung 404 (rapih)
+
+# main/views.py
+from django.http import HttpResponse
+from django.core import serializers
+from django.shortcuts import get_object_or_404
+from .models import Item
+
+b) View: XML (all)
+Alasan: serializers.serialize("xml", queryset) menghasilkan string XML siap kirim
+def show_xml(request):
+    qs = Item.objects.all()
+    xml_data = serializers.serialize("xml", qs)
+    return HttpResponse(xml_data, content_type="application/xml")
+
+c) View: JSON (all)
+Alasan: sama kaya XML, tapi formatnya "json"
+note: hasil serializers.serialize() udah berupa string JSON.=
+Jadi pakai HttpResponse, jangan JsonResponse, supaya ga “double-encode”
+def show_json(request):
+    items = Item.objects.all()                      # ambil semua Item
+    json_data = serializers.serialize("json", items)
+    return HttpResponse(json_data, content_type="application/json")
+
+d) View: XML by ID
+Cara paling ringkas: ambil QuerySet terfilter (filter(pk=id)) → tetap QuerySet → langsung serialize
+def show_xml_by_id(request, id):
+    item_qs = Item.objects.filter(pk=id)                 # queryset (bisa kosong jika tidak ada)
+    xml_data = serializers.serialize("xml", item_qs)
+    return HttpResponse(xml_data, content_type="application/xml")
+
+
+e) View: JSON by ID
+Sama logikanya seperti XML by ID
+def show_json_by_id(request, id):
+    qs = Item.objects.filter(pk=id)
+    if not qs.exists():
+        return JsonResponse({"detail": "Not found"}, status=404)
+    json_data = serializers.serialize("json", qs)
+    return HttpResponse(json_data, content_type="application/json")
+
+
+
+
+2. Membuat routing URL untuk masing-masing views yang telah ditambahkan pada poin 1.
+- Tambahkan path url ke urlpatterns untuk akses fungsi yang udah diimpor kaya diatas, dan tanpa routing, fungsi ga bisa diakses dari browser/Postman
+
+path("xml/", views.show_xml, name="show_xml"),        # ← endpoint XML
+path('json/', views.show_json, name='show_json'),   # ← endpoint JSON
+path("xml/<uuid:id>/", views.show_xml_by_id, name="show_xml_by_id"),
+path("json/<uuid:id>/", views.show_json_by_id, name="show_json_by_id"),
+
+
+
+
+3. Membuat halaman yang menampilkan data objek model yang memiliki tombol "Add" yang akan redirect ke halaman form, serta tombol "Detail" pada 
+- Alasan dibuatnya adalah untuk menampilkan ringkasan item dan tombol Add memudahkan user menambah data, sedangkan tombol detail ke halaman khusus per item, dibuatnya di main/templates/main.html
+
+
+
+- main/models.py —> “mendefinisikan struktur data” template akan menampilkan field‐field ini
+from django.db import models
+import uuid
+
+class Item(models.Model):
+    CATEGORY_CHOICES = [
+        ('jersey', 'Jersey'),
+        ('shoes', 'Shoes'),
+        ('ball', 'Ball'),
+        ('accessory', 'Accessory'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)                # nama item
+    price = models.IntegerField()                          # Harga item
+    stock = models.PositiveIntegerField(default=0)         # Stok item
+    brand = models.CharField(max_length=100)               # Brand (misal: Adidas, Nike)
+    size = models.CharField(max_length=50, blank=True)     # Ukuran (misal: US8.5, FR42)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    is_featured = models.BooleanField(default=False)       # Status unggulan
+    description = models.TextField()                       # Deskripsi
+    thumbnail = models.URLField(blank=True, null=True)     # Link gambar
+    created_at = models.DateTimeField(auto_now_add=True)   # Otomatis isi waktu dibuat
+
+
+
+- main/forms.py — “membuat form otomatis dari model, dipakai di halaman Add agar input user tervalidasi.
+# main/forms.py
+from django.forms import ModelForm
+from .models import Item
+
+class ItemForm(ModelForm):
+    class Meta:
+        model = Item
+        fields = ["name", "price", "stock", "brand", "size",
+                  "category", "is_featured", "description", "thumbnail"]
+
+
+
+- main/views.py — “terima request, olah data, render template”, 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .forms import ItemForm
+from .models import Item
+from django.http import HttpResponse
+from django.core import serializers
+
+def show_main(request):
+    items = Item.objects.all().order_by("-created_at")  # tampilkan terbaru dulu
+    context = {
+        'name': 'Petrus Wermasaubun',
+        'class': "PBP B",
+        'item_list': items,  # ganti dari news_list -> item_list
+  
+    }
+
+    return render(request, "main.html", context)
+
+def create_item(request):
+    if request.method == "POST":
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            obj = form.save()
+            messages.success(request, "Item berhasil ditambahkan.")
+            return redirect("main:show_item", id=obj.pk)  # PRG: redirect ke detail
+    else:
+        form = ItemForm()
+    return render(request, "add_item.html", {"form": form})
+
+def show_item(request, id):
+    item = get_object_or_404(Item, pk=id)  # id = UUID
+    return render(request, "item_detail.html", {"item": item})
+
+def show_xml(request):
+    items = Item.objects.all()                       # ambil semua Item
+    xml_data = serializers.serialize("xml", items)   # serialize ke XML
+    return HttpResponse(xml_data, content_type="application/xml")
+
+def show_json(request):
+    items = Item.objects.all()                      # ambil semua Item
+    json_data = serializers.serialize("json", items)
+    return HttpResponse(json_data, content_type="application/json")
+
+def show_xml_by_id(request, id):
+    item_qs = Item.objects.filter(pk=id)                 # queryset (bisa kosong jika tidak ada)
+    xml_data = serializers.serialize("xml", item_qs)
+    return HttpResponse(xml_data, content_type="application/xml")
+
+def show_json_by_id(request, id):
+    item = Item.objects.get(pk=id)                       # akan error 404 jika id tidak ada
+    json_data = serializers.serialize("json", [item])    # bungkus list untuk serialize satu objek
+    return HttpResponse(json_data, content_type="application/json")
+
+
+
+- main/templates/base.html — “kerangka HTML induk”
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>PF Shop</title>
+</head>
+<body>
+  {% block content %}{% endblock %}
+</body>
+</html>
+Supaya halaman lain tinggal {% extends 'base.html' %}
+
+
+
+- main/templates/main.html — “menampilkan semua item + tombol navigasi”
+
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+
+<h1>PF Shop</h1>
+
+<h5>Name:</h5>
+<p>{{ name }}</p>
+
+<h5>Class:</h5>
+<p>{{ class }}</p>
+
+<a href="{% url 'main:create_item' %}">
+  <button>+ Add Item</button>
+</a>
+
+<hr>
+
+{% for item in item_list %}
+  <div>
+    <h2><a href="{% url 'main:show_item' item.id %}">{{ item.name }}</a></h2>
+
+    <div class="meta">
+      <p><strong>Category:</strong> {{ item.get_category_display }}</p>
+      {% if item.is_featured %}<p><strong>Featured:</strong> Yes</p>{% endif %}
+      {% if item.size %}<p><strong>Size:</strong> {{ item.size }}</p>{% endif %}
+      <p><strong>Brand:</strong> {{ item.brand }}</p>
+      <p><strong>Price:</strong> Rp{{ item.price|intcomma }}</p>
+      <p><strong>Stock:</strong> {{ item.stock }}</p>
+    </div>
+
+    {% if item.thumbnail %}
+      <img src="{{ item.thumbnail }}" alt="thumbnail" width="150" height="100"><br />
+    {% endif %}
+
+    <p>{{ item.description|truncatewords:25 }}...</p>
+    <p><a href="{% url 'main:show_item' item.id %}"><button>Detail</button></a></p>
+  </div>
+  <hr>
+{% empty %}
+  <p>Belum ada data item.</p>
+{% endfor %}
+
+{% endblock %}
+
+
+-> {% url 'main:create_item' %} → tombol Add menuju form.
+-> {% url 'main:show_item' item.id %} → tombol Detail menuju halaman detail item.
+-> {{ item_list }} → datang dari view show_main (jangan salah pakai nama variabel).
+-> |intcomma → formatting angka (aktifkan django.contrib.humanize di INSTALLED_APPS).
+ 
+ 
+ 
+- main/templates/add_item.html — “form tambah item”
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Add Item</h1>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Add Item</button>
+  <a href="{% url 'main:show_main' %}">Cancel</a>
+</form>
+{% endblock %}
+
+
+-> {% csrf_token %} → wajib agar POST aman (mencegah CSRF)
+-> {{ form.as_p }} → render field yang didefinisikan di ItemForm
+ 
+ 
+=> Alur pakai (cek hasil)
+- Buka / → lihat list (main.html), klik + Add Item.
+- Isi form → Submit → diarahkan ke detail (/item/<id>/).
+- Klik “Back to list” → item akan muncul di list.
+ 
+ 
+
+ 
+ 
+4. setiap data objek model yang akan menampilkan halaman detail objek
+from django.db import models
+import uuid
+
+class Item(models.Model):
+    CATEGORY_CHOICES = [
+        ('jersey', 'Jersey'),
+        ('shoes', 'Shoes'),
+        ('ball', 'Ball'),
+        ('accessory', 'Accessory'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)                # nama item
+    price = models.IntegerField()                          # Harga item
+    stock = models.PositiveIntegerField(default=0)         # Stok item
+    brand = models.CharField(max_length=100)               # Brand (misal: Adidas, Nike)
+    size = models.CharField(max_length=50, blank=True)     # Ukuran (misal: US8.5, FR42)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    is_featured = models.BooleanField(default=False)       # Status unggulan
+    description = models.TextField()                       # Deskripsi
+    thumbnail = models.URLField(blank=True, null=True)     # Link gambar
+    created_at = models.DateTimeField(auto_now_add=True)   # Otomatis isi waktu dibuat
+
+- main/urls.py, id di path ini nanti diisi item.id dari database
+- main/views.py, ambil item berdasarkan id. Kalau tidak ada, otomatis 404 (rapi)
+- Di template list kamu (mis. main/templates/main.html), di dalam loop, Kuncinya: {% url 'main:show_item' item.id %} mengarah ke route di langkah #1
+- main/templates/item_detail.html
+
+
+
+
+
+5. Membuat halaman form untuk menambahkan objek model pada app sebelumnya
+# main/forms.py
+from django.forms import ModelForm
+from .models import Item
+
+class ItemForm(ModelForm):
+    class Meta:
+        model = Item
+        fields = ["name", "price", "stock", "brand", "size",
+                  "category", "is_featured", "description", "thumbnail"]
+
+Kenapa perlu csrf_token?
+Untuk mencegah CSRF (lihat penjelasan di Q&A). Tanpa token, request POST dari situs lain bisa “menunggangi” sesi user yang login.
+
+# main/templates/add_item.html
+{% extends 'base.html' %}
+{% block content %}
+<h1>Add Item</h1>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Add Item</button>
+  <a href="{% url 'main:show_main' %}">Cancel</a>
+</form>
+{% endblock %}
+
+
+
+
+
+6. Membuat halaman yang menampilkan detail dari setiap data objek model
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<p><a href="{% url 'main:show_main' %}"><button>← Back to Item List</button></a></p>
+
+<h1>{{ item.name }}</h1>
+<div class="meta">
+  <p><strong>Category:</strong> {{ item.get_category_display }}</p>
+  {% if item.is_featured %}<p><strong>Featured:</strong> Yes</p>{% endif %}
+  {% if item.size %}<p><strong>Size:</strong> {{ item.size }}</p>{% endif %}
+  <p><strong>Brand:</strong> {{ item.brand }}</p>
+  <p><strong>Price:</strong> Rp{{ item.price }}</p>
+  <p><strong>Stock:</strong> {{ item.stock }}</p>
+  <p><strong>Created:</strong> <i>{{ item.created_at|date:"d M Y, H:i" }}</i></p>
+</div>
+
+{% if item.thumbnail %}
+  <img src="{{ item.thumbnail }}" alt="Item thumbnail" width="300">
+  <br><br>
+{% endif %}
+
+<div>
+  {{ item.description|linebreaks }}
+</div>
+{% endblock content %}
+
+Supaya halaman itu “bisa didapatkan/ditampilkan” di browser, kamu perlu melengkapi alur MVT Django: URL → View → Query ke DB → Render template. Berikut langkahnya, lengkap “kode mana untuk apa”.
+
+-> Routing URL (mengatur alamat halaman detail)
+File: main/urls.py
+Tujuan: ketika user membuka /item/1/, Django memanggil fungsi view yang tepat
+item/<int:id>/ artinya URL butuh angka sebagai id
+name="show_item" dipakai di template untuk membuat link dengan {% url 'main:show_item' item.id %}
+Pastikan project/urls.py sudah include("main.urls")
+
+- View detail (mengambil data & render template)
+File: main/views.py
+Tujuan: ambil Item berdasar id, kirim ke template sebagai variabel item (yang kamu pakai di template)
+get_object_or_404 otomatis kirim 404 bila id tidak ditemukan (rapi & aman)
+Nama key di context harus item, karena template kamu memakai {{ item.* }}
+
+- Template detail 
+File: main/templates/item_detail.html
+Tujuan: menampilkan data yang dikirim dari view
+{{ item.get_category_display }} otomatis menampilkan label dari field choices
+|date:"d M Y, H:i" memformat tanggal created_at
+|linebreaks mengubah newline menjadi <p>/<br>
+Kamu bisa tambah |intcomma untuk harga/angka agar lebih enak dibaca
+
+- Link “Detail” dari halaman list (supaya bisa “masuk” ke detail)
+File: main/templates/main.html (di dalam loop)
+{% url 'main:show_item' item.id %} membentuk URL /item/<id>/ sesuai route di langkah 1
+
+
+
+
+
+7.  Jelaskan mengapa kita memerlukan data delivery dalam pengimplementasian sebuah platform?
+- Decoupling (pisah front-end & back-end)
+Tanpa data delivery, UI harus “tahu” struktur database. Dengan API, front-end (web/mobile) cukup minta data lewat kontrak yang stabil → lebih mudah ganti UI/teknologi tanpa menyentuh logika bisnis & DB.
+- Interoperabilitas lintas klien
+Satu sumber data bisa dipakai banyak klien: web, Android, iOS, layanan pihak ketiga, bahkan CLI/automasi. Format standar (JSON/XML) memudahkan integrasi.
+- Keamanan: jangan expose DB
+Klien tidak pernah langsung mengakses database. API jadi gerbang bertingkat: autentikasi, otorisasi (role/permission), rate-limit, input validation, audit logging. Risiko SQL injection & data leakage jauh turun.
+- Skalabilitas & kinerja
+API memungkinkan caching (HTTP cache, CDN), pagination, filtering, partial fields (hanya kirim yang perlu). Ini menghemat bandwidth & beban server saat traffic besar.
+- Konsistensi logika bisnis
+Aturan bisnis (diskon, stok, validasi) tinggal ditulis satu kali di back-end. Semua klien otomatis konsisten karena mengonsumsi endpoint yang sama.
+- Kontrak data yang jelas (schema)
+Dengan spesifikasi (OpenAPI/Swagger, JSON Schema), tim punya kontrak eksplisit: tipe data, field wajib, error codes, versi API. Ini mengurangi salah paham antartim.
+- Evolusi & versioning 
+API bisa berkembang (v1 → v2) tanpa mematikan klien lama. Backward compatibility dikelola lewat versioning & feature flags.
+- Observabilitas & reliabilitas
+Layer API memudahkan monitoring (latensi, error rate), tracing, retry, circuit breaker. Operasional jadi terukur & bisa ditingkatkan.
+- Kepatuhan & privasi
+Lebih mudah menerapkan data minimization (hanya field perlu), masking PII, serta enforcement kebijakan (GDPR/PDPA) dibanding membiarkan klien mengakses tabel mentah.
+- Arsitektur modern (microservices & event-driven)
+Service lain bisa mengonsumsi data via REST/GraphQL atau webhook/queue (event delivery). Ini dasar integrasi antar-service.
+
+
+
+
+8.  Menurutmu, mana yang lebih baik antara XML dan JSON? Mengapa JSON lebih populer dibandingkan XML?
+Saya hampir selalu milih JSON buat urusan API
+Kenapa?
+- Ringkas & ngebut: ukuran payload kecil, jadi hemat bandwidth dan lebih responsif
+- Gampang di-oprek di front-end: tinggal JSON.parse() di JS/TS, beres
+- Strukturnya natural: objek & array langsung nyambung ke tipe data di Python/Java/Go
+- Ekosistemnya rame: OpenAPI/Swagger, JSON Schema, mock server, linting—semua ready
+- XML tetap ada tempatnya, tapi lebih niche:
+- Kalau ketemu sistem legacy (mis. SOAP) atau standar/regulasi yang wajib XML
+- Kalau butuh dokumen yang kompleks: namespace, atribut, mixed content, validasi super ketat via XSD
+- Kalau konteksnya app (PF Shop):
+- JSON jadi format utama biar web/mobile gampang konsumsi
+- XML tetap disediain buat kompatibilitas/tugas penilaian, tapi bukan default
+
+
+
+
+9. Jelaskan fungsi dari method is_valid() pada form Django dan mengapa kita membutuhkan method tersebut?
+Apa itu is_valid()?
+- Method pada Django Form/ModelForm yang:
+- Menjalankan semua validasi
+- Mengisi form.cleaned_data (data yang sudah dibersihkan & dikonversi tipe)
+- Mengisi form.errors kalau ada masalah
+- Mengembalikan True kalau tidak ada error, selain itu False
+- Catatan: Form harus “bound” (dibuat dengan data, mis. request.POST) supaya bisa divalidasi. Form yang tidak diisi (unbound) akan is_valid() == False
+
+Apa saja yang divalidasi?
+- Ketika kamu memanggil form.is_valid() Django melakukan:
+- Validasi level field: tipe data, required, max_length, choices, validators
+- clean_<field>() (jika kamu definisikan) untuk kustom 1 field
+- clean() (jika kamu definisikan) untuk aturan lintas-field (mis. start_date < end_date)
+- Model-level (khusus ModelForm): constraint model seperti unique, UniqueConstraint/unique_together dan validator model lain. Ini mencegah tabrakan unik di DB
+
+Hasilnya:
+- form.cleaned_data berisi nilai yang sudah “bersih” (mis. string → int, strip spasi, dsb.)
+- form.errors / form.non_field_errors() berisi pesan error yang siap ditampilkan ke user
+- Kenapa kita butuh is_valid()?
+- Keamanan: mencegah input berbahaya/format tidak sah masuk ke sistem
+- Integritas data: menghindari IntegrityError (mis. field unik dobel) dan data rusak
+- UX yang baik: pesan error muncul rapi di form (bukan error 500)
+- Normalisasi data: konversi tipe & pembersihan nilai sebelum dipakai/simpan
+- Konsistensi aturan bisnis: semua klien (web/mobile) lewat jalur validasi yang sama
+
+
+
+
+
+10.  Mengapa kita membutuhkan csrf_token saat membuat form di Django? Apa yang dapat terjadi jika kita tidak menambahkan csrf_token pada form Django? Bagaimana hal tersebut dapat dimanfaatkan oleh penyerang?
+
+Singkatnya: {% csrf_token %} itu tameng utama supaya form kamu nggak bisa dipakai orang lain buat “klik” atas nama user tanpa sepengetahuan mereka (CSRF)
+
+CSRF itu apa?
+Cross-Site Request Forgery = serangan di mana penyerang bikin browser korban mengirim request sah (lengkap dengan cookie sesi/login) ke situsmu, tanpa korban sadar
+Contoh: user sedang login di situsmu, lalu membuka situs jahat → situs jahat itu menyelipkan form auto-submit ke /transfer/, dan browser otomatis mengirim cookie session korban ke situsmu
+
+Kenapa perlu csrf_token?
+Karena browser otomatis bawa cookie (sessionid) saat mengakses domainmu. Tanpa mekanisme tambahan, server nggak bisa bedain:
+request dari halaman kamu sendiri (legit), vs
+request dari situs lain (jahat) yang “nebeng” cookie user.
+csrf_token menambahkan rahasia satu-kali-pakai (token) di halaman/form milikmu. Django:
+menaruh token di cookie csrftoken,
+minta token yang sama dikirim kembali di body form ({% csrf_token %}) atau header X-CSRFToken (AJAX),
+mencocokkan keduanya + (untuk HTTPS) validasi Origin/Referer.
+Kalau nggak cocok → 403 Forbidden
+Ini disebut pola double submit cookie + origin check
+
+Kalau nggak pakai csrf_token, apa yang terjadi?
+Dua kemungkinan:
+- CSRF middleware aktif (default di Django)
+Request POST/PUT/PATCH/DELETE dari form tanpa token → ditolak 403
+Gejala di dev: “CSRF verification failed. Request aborted.”
+CSRF middleware dimatikan / view di-@csrf_exempt
+- Aplikasi kamu rentan CSRF. Penyerang bisa:
+menambah item / mengubah profil / ganti email / ubah password (kalau endpoint tidak minta password lama)
+melakukan transaksi (top-up, transfer, order barang)
+aksi admin jika user yang login adalah admin
+Semua terjadi tanpa klik sadar dari user—cukup bikin halaman jahat yang auto-submt
+
+4) Skema serangan (contoh konkret)
+Situs jahat menaruh HTML ini:
+<form action="https://app-kamu.com/add/" method="POST">
+  <input type="hidden" name="name" value="Item dari hacker">
+  <input type="hidden" name="price" value="9999999">
+</form>
+<script>document.forms[0].submit()</script>
+Korban sedang login di app-kamu.com, lalu buka halaman ini. Browser korban:
+mengirim POST ke app-kamu.com/add/
+membawa cookie session korban
+Jika tidak ada verifikasi CSRF, server menganggap ini request sah dari user → data berubah.
+Catatan: Kebijakan cookie modern SameSite=Lax memang membantu, tapi bukan pengganti CSRF token (masih ada kasus yang lolos, edge cases, subdomain, metode/flow tertentu). Jangan mengandalkan ini saja.
+
+
+11. Apakah ada feedback untuk asdos di tutorial 2 yang sudah kalian kerjakan?
+=> SANGAT AMAT BAIK DAN HELPFULLLL.......
+MAKASIII BANYAK BANYAK KAAA...
+
+
+
+
+12.  Mengakses keempat URL di poin 2 menggunakan Postman, membuat screenshot dari hasil akses URL pada Postman, dan menambahkannya ke dalam README.md
+
+![json postman](json.jpg)
+![xml postman](xml.jpg)
+![json postman with news id](json_w_news_id.jpg)
+![xml postman with news id](xml_w_news_id.jpg)
