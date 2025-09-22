@@ -1,7 +1,9 @@
 from django.db import models
 import uuid
+from django.contrib.auth.models import User
 
 class Item(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     CATEGORY_CHOICES = [
         ('jersey', 'Jersey'),
         ('shoes', 'Shoes'),

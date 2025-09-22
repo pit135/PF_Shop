@@ -1,5 +1,14 @@
 # main/tests.py
 from django.test import TestCase, Client
+from django.test import TestCase, Client
+from .models import Item
+from django.test import LiveServerTestCase
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+from django.contrib.auth.models import User
 
 class PFShopTestCase(TestCase):
     def setUp(self):
@@ -18,3 +27,4 @@ class PFShopTestCase(TestCase):
         """Pastikan template yang digunakan main.html"""
         response = Client().get('/')
         self.assertTemplateUsed(response, 'main.html')
+
