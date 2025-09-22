@@ -25,6 +25,8 @@
 
 {% if item.user %}
     <p>Seller: {{ item.user.username }}</p>
+{% else %}
+    <p>Seller: Anonymous</p>
 {% endif %}
 
 {% endblock content %}
