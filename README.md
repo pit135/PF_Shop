@@ -1200,7 +1200,7 @@ MAKASIII BANYAK BANYAK KAAA...
 
 
 
-======================================================= TUGAS 3 ================================================================
+======================================================= TUGAS 4 ================================================================
 
 
 1. Mengimplementasikan fungsi registrasi, login, dan logout untuk memungkinkan pengguna mengakses aplikasi sebelumnya sesuai dengan status login/logoutnya
@@ -1377,14 +1377,9 @@ urlpatterns = [
    path('logout/', logout_user, name='logout'),
 ]
 
-
-
-
-
-2. Membuat dua (2) akun pengguna dengan masing-masing tiga (3) dummy data menggunakan model yang telah dibuat sebelumnya untuk setiap akun di lokal.
-
-
-
+2. Membuat dua (2) akun pengguna dengan masing-masing tiga (3) dummy data menggunakan model yang telah dibuat sebelumnya untuk setiap akun di lokal
+![user 1 Petrus + 3 dummy](user1Petrus.jpg)
+![user 2 Alton + 3 dummy](user2Alton.jpg)
 
 
 3. Menghubungkan model Product dengan User
