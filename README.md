@@ -2377,3 +2377,72 @@ Contoh:
 
 Kesimpulan:  
 Flexbox dan Grid sama-sama memudahkan pembuatan layout responsif dan modern. Pilih Flexbox untuk tata letak satu arah, dan Grid untuk tata letak dua arah yang lebih kompleks.
+
+
+6. Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial)!
+
+
+### 1. Bikin Fitur Edit & Hapus Product
+
+a) Edit Product*
+- Pertama, aku tambahin fungsi `edit_item` di `views.py`. Fungsinya buat nampilin form edit yang udah keisi data lama, jadi user tinggal ubah aja field yang mau diedit.
+- Aku pastiin yang bisa edit cuma user yang bikin item itu (pakai filter `user=request.user` waktu ambil data).
+- Kalau form di-submit (POST), dicek dulu valid atau nggak. Kalau valid, langsung save dan redirect ke halaman detail item.
+- Kalau GET, formnya diisi data lama (pakai `instance=item`).
+- Di template `edit_item.html`, aku render formnya, ada tombol simpan sama cancel.
+- Di halaman detail (`item_detail.html`), aku tambahin tombol Edit, tapi cuma muncul kalau user yang login itu pemilik itemnya.
+
+**b) Hapus Product**
+- Sama kayak edit, aku bikin fungsi `delete_item` di `views.py`. Cuma user pemilik yang bisa akses.
+- Kalau user klik tombol delete, muncul halaman konfirmasi (`delete_item.html`). Kalau user yakin (POST), item langsung dihapus dan balik ke halaman utama.
+- Tombol Delete juga cuma muncul buat pemilik item di halaman detail.
+
+**c) Routing**
+- Di `urls.py`, aku tambahin path buat edit dan delete, formatnya `item/<uuid:id>/edit/` dan `item/<uuid:id>/delete/`.
+
+
+### 2. Kustomisasi Desain Pakai Tailwind CSS
+
+a) Setup Tailwind
+- Aku install Tailwind CSS di project (pakai npm), terus bikin file CSS sendiri yang isinya `@tailwind base; @tailwind components; @tailwind utilities;`.
+- File CSS hasil build aku link ke `base.html` biar semua halaman dapet styling Tailwind.
+
+b) Kustomisasi Halaman
+- Semua halaman penting (login, register, tambah, edit, detail) aku kasih styling Tailwind: background abu-abu, card putih, shadow, rounded, tombol warna-warni, dan layout responsif.
+- Form di-center, card produk pakai grid, tombol ada efek hover, dan layout tetap rapi di HP maupun desktop.
+- Di halaman detail, info produk aku tata biar enak dibaca, gambar produk tampil gede, dan tombol aksi (edit/delete) jelas kelihatan.
+
+
+### 3. Halaman Daftar Product Lebih Menarik & Responsive
+
+- Di `main.html`, aku bikin grid card buat tiap produk. Kalau ada gambar, tampil, kalau nggak ada, muncul placeholder.
+- Kalau belum ada produk sama sekali, aku tampilin gambar ilustrasi (misal SVG) plus pesan “Belum ada product yang terdaftar”.
+- Tombol Add Item, Logout, dan filter (All/My) aku tata di atas, biar gampang diakses.
+- Setiap card produk ada tombol Detail (buat semua user), Edit & Delete (khusus pemilik).
+- Semua tombol pakai warna dan efek hover biar interaktif.
+
+
+### 4. Navbar Responsive
+
+- Aku tambahin navbar di `base.html` pakai Tailwind. Navbar ini otomatis berubah jadi hamburger menu kalau di HP.
+- Isi navbar: Home, Add Item, filter All/My, dan tombol login/register atau logout (tergantung status user).
+- Navbar ini selalu muncul di atas semua halaman, jadi gampang navigasi ke fitur mana aja.
+
+
+### 5. Penjelasan CSS Selector, Responsive, Box Model, Flex/Grid
+
+- Aku tulis penjelasan singkat soal urutan prioritas CSS selector (ID > class > elemen > inline > !important).
+- Responsive design itu penting banget biar web tetap enak dipakai di HP, tablet, atau desktop. Aku kasih contoh web yang udah dan belum responsive.
+- Aku juga jelasin bedanya margin, border, padding, dan cara pakainya di CSS.
+- Terakhir, aku bahas konsep flexbox dan grid layout, kapan pakai yang mana, dan contoh penggunaannya.
+
+
+### 6. Cara Kerja Step-by-Step (Inti)
+
+- Aku mulai dari setup Tailwind, lalu modif semua template biar tampilannya modern dan responsif.
+- Bikin fitur edit & delete item, pastiin cuma pemilik yang bisa akses.
+- Routing diatur biar semua fitur bisa diakses lewat URL yang jelas.
+- Navbar aku bikin responsif, gampang dipakai di semua device.
+- Semua logic dicek di backend juga, bukan cuma di tampilan.
+- Aku tes semua fitur: tambah, edit, hapus, filter, login/logout, dan pastiin tampilannya konsisten di HP & desktop.
+
