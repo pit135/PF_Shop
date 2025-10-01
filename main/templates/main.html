@@ -1,65 +1,111 @@
- {% extends 'base.html' %}
- {% load humanize %}
- {% block content %}
- 
-<h1>PF Shop</h1>
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
 
-<h5>Name:</h5>
-<p>{{ name }}</p>
+{% block meta %}
+<title>PF Shop</title>
+{% endblock meta %}
 
-<h5>Class:</h5>
-<p>{{ class }}</p>
+{% block content %}
+{% include 'navbar.html' %}
 
-<a href="{% url 'main:create_item' %}">
-  <button>+ Add Item</button>
-</a>
+<div class="bg-green-50 w-full pt-16 min-h-screen shadow-inner">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-<a href="{% url 'main:logout' %}">
-  <button>Logout</button>
-</a>
+    <!-- Header Section -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">PF Shop</h1>
+      <p class="text-gray-600">Everything you want in football is right here</p>
+    </div>
 
-<h5>Sesi terakhir login: {{ last_login }}</h5>
+    <!-- Filter Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-white rounded-lg border border-gray-200 p-4 shadow">
+      <div class="flex space-x-3 mb-4 sm:mb-0">
+        <a href="?" class="{% if request.GET.filter == 'all' or not request.GET.filter %} bg-green-600 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
+          All Items
+        </a>
+        <a href="?filter=my" class="{% if request.GET.filter == 'my' %} bg-green-600 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
+          My Items
+        </a>
+      </div>
+      {% if user.is_authenticated %}
+        <div class="text-sm text-gray-500">
+          Last login: {{ last_login }}
+        </div>
+      {% endif %}
+    </div>
 
-<hr>
-
-<a href="?filter=all">
-    <button type="button">All Items</button>
-</a>
-<a href="?filter=my">
-    <button type="button">My Items</button>
-</a> 
-
-{% if not item_list %}
-  <p>Belum ada data item.</p>
-{% else %}
-
-{% for item in item_list %}
-<div>
-  <h2><a href="{% url 'main:show_item' item.id %}">{{ item.name }}</a></h2>
-
-  <div class="meta">
-    <p><strong>Category:</strong> {{ item.get_category_display }}</p>
-    {% if item.is_featured %}<p><strong>Featured:</strong> Yes</p>{% endif %}
-    {% if item.size %}<p><strong>Size:</strong> {{ item.size }}</p>{% endif %}
-    <p><strong>Brand:</strong> {{ item.brand }}</p>
-    <p><strong>Price:</strong> Rp{{ item.price }}</p>
-    <p><strong>Stock:</strong> {{ item.stock }}</p>
-    <p><strong>Created:</strong> <i>{{ item.created_at|date:"d M Y H:i" }}</i></p>
+    <!-- Item Grid -->
+    {% if not item_list %}
+      <div class="bg-white rounded-lg border border-gray-200 p-12 text-center shadow">
+        <div class="w-32 h-32 mx-auto mb-4">
+          <img src="{% static 'image/no-items.png' %}" alt="No items available" class="w-full h-full object-contain">
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No items found</h3>
+        <p class="text-gray-500 mb-6">Be the first to add an item to the shop.</p>
+        <a href="{% url 'main:create_item' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+          + Add Item
+        </a>
+      </div>
+    {% else %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in item_list %}
+        <div class="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden flex flex-col relative">
+          
+          <!-- Image -->
+          <div class="relative h-70 w-full overflow-hidden">
+            {% if item.thumbnail %}
+              <img src="{{ item.thumbnail }}" alt="{{ item.name }}" 
+                   class="w-full h-full object-cover object-center">
+            {% endif %}
+            
+            <!-- Category Badge -->
+            <span class="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
+              {{ item.get_category_display }}
+            </span>
+            
+            <!-- Featured Badge -->
+            {% if item.is_featured %}
+            <span class="absolute top-3 right-3 bg-yellow-200 text-yellow-900 text-xs font-medium px-2 py-1 rounded shadow">
+              ⭐ Featured
+            </span>
+            {% endif %}
+          </div>
+          
+          <!-- Content -->
+          <div class="flex-1 flex flex-col p-4">
+            <p class="text-sm text-gray-500 mb-2">
+              {{ item.created_at|date:"M d, Y" }}
+              • {{ item.views|default:0 }} views
+            </p>
+            
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">
+              {{ item.name }}
+            </h2>
+            
+            <p class="text-gray-600 text-sm flex-1">
+              {{ item.description }}
+            </p>
+            
+            <!-- Actions -->
+            <div class="mt-6 flex items-center justify-between text-sm border-t pt-4">
+              <a href="{% url 'main:show_item' item.id %}" class="text-green-600 hover:underline">
+                Detail
+              </a>
+              <div class="flex gap-4">
+                <a href="{% url 'main:edit_item' item.pk %}" class="text-gray-600 hover:text-green-700 font-medium">
+                  Edit
+                </a>
+                <a href="{% url 'main:delete_item' item.pk %}" class="text-red-600 hover:text-red-800 font-medium">
+                  Delete
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
 </div>
-
-
-  {% if item.thumbnail %}
-    <img src="{{ item.thumbnail }}" alt="thumbnail" width="150" height="100"><br />
-  {% endif %}
-
-  <p>{{ item.description|truncatewords:25 }}...</p>
-
-  <p><a href="{% url 'main:show_item' item.id %}"><button>Detail</button></a></p>
-</div>
-
-<hr>
-{% endfor %}
-
-{% endif %}
-
 {% endblock content %}

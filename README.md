@@ -1565,3 +1565,815 @@ Django punya fitur signed cookies, artinya data di cookie ditandatangani digital
 Django juga otomatis pakai CSRF Token (beda dari cookie biasa) buat mencegah serangan Cross-Site Request Forgery
 
 jadi singkatnya: cookies nggak aman kalau dibiarkan default tanpa perlindungan, tapi Django udah kasih banyak mekanisme biar kita bisa pakai cookies dengan lebih aman
+
+
+
+
+
+
+
+
+
+
+
+
+
+======================================================= TUGAS 4 ================================================================
+
+
+1. Implementasikan fungsi untuk menghapus dan mengedit product
+
+### 1. Implementasi Fungsi Edit dan Hapus Product
+
+#### a) Edit Product
+
+**View (main/views.py):**
+python
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import ItemForm
+from .models import Item
+from django.contrib.auth.decorators import login_required
+
+@login_required(login_url='/login')
+def edit_item(request, id):
+    item = get_object_or_404(Item, pk=id, user=request.user)
+    if request.method == "POST":
+        form = ItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('main:show_item', id=item.id)
+    else:
+        form = ItemForm(instance=item)
+    return render(request, "edit_item.html", {"form": form, "item": item})
+
+- Fungsi ini hanya mengizinkan user yang membuat item untuk mengeditnya (`user=request.user`).
+- Jika request POST, data form divalidasi dan disimpan.
+- Jika GET, form diisi data lama (instance).
+- Setelah berhasil, redirect ke halaman detail item.
+
+Template (main/templates/edit_item.html):
+django
+{% extends 'base.html' %}
+{% block content %}
+<h1>Edit Item</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save Changes</button>
+  <a href="{% url 'main:show_item' item.id %}">Cancel</a>
+</form>
+{% endblock %}
+
+- Form otomatis terisi data lama.
+- Ada tombol simpan dan batal.
+
+URL Routing (main/urls.py):
+python
+from main.views import edit_item
+
+urlpatterns = [
+    # ...
+    path('item/<uuid:id>/edit/', edit_item, name='edit_item'),
+]
+
+- URL ini menerima UUID item dan memanggil view edit_item.
+
+Tombol Edit di item_detail.html:
+django
+{% if item.user == request.user %}
+  <a href="{% url 'main:edit_item' item.id %}"><button>Edit</button></a>
+{% endif %}
+
+- Tombol hanya muncul jika user adalah pemilik item.
+
+---
+
+#### b) Hapus Product
+
+View (main/views.py):
+python
+from django.contrib import messages
+
+@login_required(login_url='/login')
+def delete_item(request, id):
+    item = get_object_or_404(Item, pk=id, user=request.user)
+    if request.method == "POST":
+        item.delete()
+        messages.success(request, "Item berhasil dihapus.")
+        return redirect('main:show_main')
+    return render(request, "delete_item.html", {"item": item})
+
+- Hanya pemilik item yang bisa menghapus.
+- Jika POST, item dihapus lalu redirect ke halaman utama.
+- Jika GET, tampilkan konfirmasi.
+
+Template (main/templates/delete_item.html):
+django
+{% extends 'base.html' %}
+{% block content %}
+<h1>Delete Item</h1>
+<p>Are you sure you want to delete <strong>{{ item.name }}</strong>?</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Yes, Delete</button>
+  <a href="{% url 'main:show_item' item.id %}">Cancel</a>
+</form>
+{% endblock %}
+
+- Konfirmasi sebelum menghapus.
+
+URL Routing (main/urls.py):
+python
+from main.views import delete_item
+
+urlpatterns = [
+    # ...
+    path('item/<uuid:id>/delete/', delete_item, name='delete_item'),
+]
+
+
+Tombol Delete di item_detail.html:
+django
+{% if item.user == request.user %}
+  <a href="{% url 'main:delete_item' item.id %}"><button>Delete</button></a>
+{% endif %}
+
+- Tombol hanya muncul untuk pemilik item.
+
+---
+
+### Penjelasan Detil
+
+- Keamanan: Semua aksi edit/hapus dicek agar hanya user pembuat yang bisa mengakses (filter `user=request.user`).
+- UX: Edit dan delete memakai form terpisah, dengan konfirmasi untuk delete.
+- Routing: URL memakai UUID agar lebih aman dan unik.
+- Template: Tombol edit/delete hanya muncul jika user adalah pemilik item.
+- Best Practice: Pakai `login_required` agar hanya user login yang bisa akses fitur ini.
+
+
+### 2. Kustomisasi Desain dengan Tailwind CSS
+
+#### a) Setup Tailwind CSS di Proyek Django
+
+1. Install Tailwind CSS  
+    Jalankan di terminal pada root project:
+    bash
+    npm install -D tailwindcss
+    npx tailwindcss init
+    
+2. Konfigurasi Tailwind  
+    Edit `tailwind.config.js`:
+    js
+    module.exports = {
+      content: [
+         './main/templates/**/*.html',
+      ],
+      theme: {
+         extend: {},
+      },
+      plugins: [],
+    }
+    
+3. **Buat File CSS**  
+    Di folder static (misal: `main/static/css/tailwind.css`):
+    css
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    
+4. **Build CSS**  
+    Jalankan:
+    bash
+    npx tailwindcss -i ./main/static/css/tailwind.css -o ./main/static/css/output.css --watch
+    
+5. **Include CSS di base.html**  
+    Tambahkan di `<head>`:
+    html
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    
+
+
+2. Kustomisasi desain pada template HTML yang telah dibuat pada tugas-tugas sebelumnya menggunakan CSS atau CSS framework (seperti Bootstrap, Tailwind, Bulma) dengan ketentuan sebagai berikut:
+
+    a) Kustomisasi halaman login, register, tambah product, edit product, dan detail product semenarik mungkin
+
+#### b) Kustomisasi Template
+
+##### 1. Login (`login.html`)
+django
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+     <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">Login</h1>
+     <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Login</button>
+     </form>
+     <p class="mt-4 text-center text-gray-600">
+        Don't have an account?
+        <a href="{% url 'main:register' %}" class="text-blue-600 hover:underline">Register Now</a>
+     </p>
+     {% if messages %}
+        <ul class="mt-4 text-red-500">
+          {% for message in messages %}
+             <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+     {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+
+##### 2. Register (`register.html`)
+django
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+     <h1 class="text-2xl font-bold mb-6 text-center text-green-700">Register</h1>
+     <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Register</button>
+     </form>
+     {% if messages %}
+        <ul class="mt-4 text-red-500">
+          {% for message in messages %}
+             <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+     {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+
+##### 3. Tambah Product (`add_item.html`)
+django
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
+     <h1 class="text-2xl font-bold mb-6 text-center text-indigo-700">Add Item</h1>
+     <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="flex gap-2">
+          <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">Add Item</button>
+          <a href="{% url 'main:show_main' %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">Cancel</a>
+        </div>
+     </form>
+  </div>
+</div>
+{% endblock %}
+
+
+##### 4. Edit Product (`edit_item.html`)
+django
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
+     <h1 class="text-2xl font-bold mb-6 text-center text-yellow-700">Edit Item</h1>
+     <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="flex gap-2">
+          <button type="submit" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition">Save Changes</button>
+          <a href="{% url 'main:show_item' item.id %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">Cancel</a>
+        </div>
+     </form>
+  </div>
+</div>
+{% endblock %}
+
+
+##### 5. Detail Product (`item_detail.html`)
+django
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+     <a href="{% url 'main:show_main' %}" class="text-blue-600 hover:underline">&larr; Back to Item List</a>
+     <h1 class="text-3xl font-bold mt-2 mb-4 text-gray-800">{{ item.name }}</h1>
+     <div class="flex flex-col md:flex-row gap-6">
+        {% if item.thumbnail %}
+          <img src="{{ item.thumbnail }}" alt="Item thumbnail" class="rounded-lg shadow w-72 h-48 object-cover">
+        {% endif %}
+        <div>
+          <p class="mb-2"><span class="font-semibold">Category:</span> {{ item.get_category_display }}</p>
+          {% if item.is_featured %}
+             <p class="mb-2"><span class="font-semibold">Featured:</span> <span class="text-green-600">Yes</span></p>
+          {% endif %}
+          {% if item.size %}
+             <p class="mb-2"><span class="font-semibold">Size:</span> {{ item.size }}</p>
+          {% endif %}
+          <p class="mb-2"><span class="font-semibold">Brand:</span> {{ item.brand }}</p>
+          <p class="mb-2"><span class="font-semibold">Price:</span> <span class="text-indigo-700 font-bold">Rp{{ item.price|intcomma }}</span></p>
+          <p class="mb-2"><span class="font-semibold">Stock:</span> {{ item.stock }}</p>
+          <p class="mb-2"><span class="font-semibold">Created:</span> <i>{{ item.created_at|date:"d M Y, H:i" }}</i></p>
+          {% if item.user %}
+             <p class="mb-2"><span class="font-semibold">Seller:</span> {{ item.user.username }}</p>
+          {% else %}
+             <p class="mb-2"><span class="font-semibold">Seller:</span> Anonymous</p>
+          {% endif %}
+        </div>
+     </div>
+     <div class="mt-6">
+        <h2 class="text-xl font-semibold mb-2">Description</h2>
+        <div class="prose max-w-none">{{ item.description|linebreaks }}</div>
+     </div>
+     <div class="mt-6 flex gap-2">
+        {% if item.user == request.user %}
+          <a href="{% url 'main:edit_item' item.id %}">
+             <button class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition">Edit</button>
+          </a>
+          <a href="{% url 'main:delete_item' item.id %}">
+             <button class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Delete</button>
+          </a>
+        {% endif %}
+     </div>
+  </div>
+</div>
+{% endblock %}
+
+
+---
+
+#### c) Catatan
+
+- Semua halaman menggunakan utility Tailwind seperti `bg-gray-100`, `rounded-lg`, `shadow-md`, dan warna-warna sesuai konteks.
+- Form dan tombol diberi efek hover dan transisi agar lebih interaktif.
+- Layout responsif dengan `max-w-md`, `max-w-lg`, dan `max-w-2xl`.
+- Untuk produksi, pastikan file CSS hasil build Tailwind sudah di-collect ke static dan di-link di base.html.
+
+Dengan kustomisasi ini, tampilan login, register, tambah, edit, dan detail produk menjadi modern, responsif, dan konsisten sesuai standar Tailwind CSS.
+
+
+
+b) Kustomisasi halaman daftar product menjadi lebih menarik dan responsive. Kemudian, perhatikan kondisi berikut:
+ Jika pada aplikasi belum ada product yang tersimpan, halaman daftar product akan menampilkan gambar dan pesan bahwa belum ada product yang terdaftar.
+ Jika sudah ada product yang tersimpan, halaman daftar product akan menampilkan detail setiap product dengan menggunakan card 
+
+### Kustomisasi Halaman Daftar Product (main.html) Menjadi Lebih Menarik dan Responsive
+
+#### 1. Desain Responsif dan Menarik dengan Tailwind CSS
+
+Halaman daftar product (`main.html`) dikustomisasi menggunakan Tailwind CSS agar tampil modern, responsif, dan user-friendly. Setiap product ditampilkan dalam bentuk card grid, dan jika belum ada product, akan muncul gambar ilustrasi beserta pesan informatif.
+
+#### 2. Implementasi Kode Template
+
+django
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="container mx-auto px-4">
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-indigo-700 mb-1">PF Shop</h1>
+                <div class="text-gray-600">
+                    <span class="mr-4">Name: <span class="font-semibold">{{ name }}</span></span>
+                    <span>Class: <span class="font-semibold">{{ class }}</span></span>
+                </div>
+                <div class="mt-2 text-sm text-gray-500">Sesi terakhir login: {{ last_login }}</div>
+            </div>
+            <div class="flex gap-2 mt-4 md:mt-0">
+                <a href="{% url 'main:create_item' %}">
+                    <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">+ Add Item</button>
+                </a>
+                <a href="{% url 'main:logout' %}">
+                    <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">Logout</button>
+                </a>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+            <a href="?filter=all">
+                <button type="button" class="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 transition {% if request.GET.filter == 'all' or not request.GET.filter %}ring-2 ring-indigo-400{% endif %}">All Items</button>
+            </a>
+            <a href="?filter=my">
+                <button type="button" class="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 transition {% if request.GET.filter == 'my' %}ring-2 ring-indigo-400{% endif %}">My Items</button>
+            </a>
+        </div>
+
+        {% if item_list %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for item in item_list %}
+                    <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-5 flex flex-col">
+                        {% if item.thumbnail %}
+                            <img src="{{ item.thumbnail }}" alt="thumbnail" class="rounded-md mb-3 w-full h-40 object-cover">
+                        {% else %}
+                            <div class="bg-gray-200 rounded-md mb-3 w-full h-40 flex items-center justify-center text-gray-400 text-4xl">
+                                <span class="material-icons">image_not_supported</span>
+                            </div>
+                        {% endif %}
+                        <h2 class="text-xl font-bold text-gray-800 mb-1 truncate">
+                            <a href="{% url 'main:show_item' item.id %}" class="hover:underline">{{ item.name }}</a>
+                        </h2>
+                        <div class="text-sm text-gray-500 mb-2">
+                            <span class="mr-2">Brand: {{ item.brand }}</span>
+                            <span>Category: {{ item.get_category_display }}</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 mb-2">{{ item.description|truncatewords:20 }}...</p>
+                        </div>
+                        <div class="mt-2 flex flex-col gap-1">
+                            <span class="text-indigo-700 font-semibold">Rp{{ item.price|intcomma }}</span>
+                            <span class="text-xs text-gray-400">Stock: {{ item.stock }}</span>
+                            {% if item.is_featured %}
+                                <span class="inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">Featured</span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <a href="{% url 'main:show_item' item.id %}">
+                                <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm">Detail</button>
+                            </a>
+                            {% if item.user == request.user %}
+                                <a href="{% url 'main:edit_item' item.id %}">
+                                    <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition text-sm">Edit</button>
+                                </a>
+                                <a href="{% url 'main:delete_item' item.id %}">
+                                    <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm">Delete</button>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="flex flex-col items-center justify-center mt-16">
+                <img src="{% static 'img/empty_product.svg' %}" alt="No Product" class="w-64 h-64 mb-6 opacity-80">
+                <h2 class="text-2xl font-bold text-gray-500 mb-2">Belum ada product yang terdaftar</h2>
+                <p class="text-gray-400 mb-4">Silakan tambahkan product baru dengan menekan tombol <span class="font-semibold">+ Add Item</span> di atas.</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}
+
+
+#### 3. Penjelasan
+
+- Responsif:  
+    Menggunakan grid Tailwind (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) agar card produk otomatis menyesuaikan ukuran layar.
+- Card Product:  
+    Setiap product ditampilkan dalam card dengan shadow, rounded, dan efek hover. Gambar produk tampil di atas, jika tidak ada gambar maka muncul placeholder.
+- Tombol Aksi:  
+    Terdapat tombol Detail, Edit, dan Delete. Tombol Edit/Delete hanya muncul jika user adalah pemilik item.
+- Filter:  
+    Terdapat tombol filter "All Items" dan "My Items" dengan highlight pada filter aktif.
+- Empty State:  
+    Jika belum ada product, tampil gambar ilustrasi (misal: `empty_product.svg` di folder static/img) dan pesan informatif.
+- Aksesibilitas:  
+    Warna dan kontras tombol serta teks sudah disesuaikan agar mudah dibaca.
+- **Konsistensi:  
+    Semua elemen mengikuti utility Tailwind agar tampilan konsisten di seluruh halaman.
+
+#### Catatan
+
+- Pastikan file gambar `empty_product.svg` sudah ada di folder `main/static/img/`.
+- Untuk icon placeholder, bisa gunakan font icon (misal: Material Icons) atau SVG inline.
+- Pastikan file CSS Tailwind sudah di-link di `base.html` dan sudah di-build ke static.
+
+Dengan kustomisasi ini, halaman daftar product menjadi jauh lebih menarik, informatif, dan responsif baik saat kosong maupun saat sudah ada data
+
+
+c) Untuk setiap card product, buatlah dua buah button untuk mengedit dan menghapus product pada card tersebut!
+
+Pada setiap card product di halaman daftar product (`main.html`), tambahkan dua tombol Edit dan Delete di bagian bawah card. Tombol-tombol ini hanya muncul jika user yang sedang login adalah pemilik (author) dari product tersebut. Berikut implementasi dan penjelasannya:
+
+django
+<div class="mt-3 flex gap-2">
+    <a href="{% url 'main:show_item' item.id %}">
+        <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm">Detail</button>
+    </a>
+    {% if item.user == request.user %}
+        <a href="{% url 'main:edit_item' item.id %}">
+            <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition text-sm">Edit</button>
+        </a>
+        <a href="{% url 'main:delete_item' item.id %}">
+            <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm">Delete</button>
+        </a>
+    {% endif %}
+</div>
+
+Penjelasan:
+
+- Tombol Edit
+  - URL: `{% url 'main:edit_item' item.id %}`  
+  - Hanya muncul jika `item.user == request.user` (user yang login adalah pemilik product).
+  - Tombol berwarna kuning (`bg-yellow-500`) dengan efek hover.
+
+- **Tombol Delete**  
+  - URL: `{% url 'main:delete_item' item.id %}`  
+  - Juga hanya muncul untuk pemilik product.
+  - Tombol berwarna merah (`bg-red-500`) dengan efek hover.
+
+- **Tombol Detail**  
+  - Selalu muncul untuk semua user agar bisa melihat detail product.
+
+- **Posisi**  
+  - Semua tombol diletakkan dalam satu baris (`flex gap-2`) di bagian bawah card product.
+
+**Alur Kerja:**
+- Jika user adalah pemilik product, mereka dapat mengedit atau menghapus product langsung dari halaman daftar dengan mengklik tombol Edit atau Delete.
+- Jika bukan pemilik, hanya tombol Detail yang terlihat.
+
+**Keamanan:**
+- Pada sisi backend (views.py), baik fungsi edit maupun delete sudah dicek agar hanya pemilik yang bisa mengakses (menggunakan filter `user=request.user` dan decorator `@login_required`).
+
+**Contoh lengkap di dalam card:**
+django
+<div class="bg-white rounded-lg shadow hover:shadow-lg transition p-5 flex flex-col">
+    <!-- ... konten card ... -->
+    <div class="mt-3 flex gap-2">
+        <a href="{% url 'main:show_item' item.id %}">
+            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm">Detail</button>
+        </a>
+        {% if item.user == request.user %}
+            <a href="{% url 'main:edit_item' item.id %}">
+                <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition text-sm">Edit</button>
+            </a>
+            <a href="{% url 'main:delete_item' item.id %}">
+                <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm">Delete</button>
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+
+d) Buatlah navigation bar (navbar) untuk fitur-fitur pada aplikasi yang responsive terhadap perbedaan ukuran device, khususnya mobile dan desktop.
+
+### Responsive Navigation Bar (Navbar) dengan Tailwind CSS
+
+Tambahkan kode berikut ke `base.html` (atau file layout utama) tepat setelah tag `<body>`:
+
+django
+<nav class="bg-indigo-700 text-white shadow-md">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="{% url 'main:show_main' %}" class="text-2xl font-bold tracking-tight hover:text-indigo-200 transition">PF Shop</a>
+        <button id="navbar-toggle" class="md:hidden focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <div id="navbar-menu" class="hidden md:flex md:items-center gap-6">
+            <a href="{% url 'main:show_main' %}" class="hover:text-indigo-200 transition">Home</a>
+            <a href="{% url 'main:create_item' %}" class="hover:text-indigo-200 transition">Add Item</a>
+            <a href="?filter=all" class="hover:text-indigo-200 transition">All Items</a>
+            <a href="?filter=my" class="hover:text-indigo-200 transition">My Items</a>
+            {% if user.is_authenticated %}
+                <span class="ml-2">Hi, <span class="font-semibold">{{ user.username }}</span></span>
+                <a href="{% url 'main:logout' %}" class="ml-4 bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition">Logout</a>
+            {% else %}
+                <a href="{% url 'main:login' %}" class="ml-4 bg-white text-indigo-700 px-3 py-1 rounded hover:bg-indigo-100 transition">Login</a>
+                <a href="{% url 'main:register' %}" class="ml-2 bg-green-400 text-white px-3 py-1 rounded hover:bg-green-500 transition">Register</a>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Mobile menu -->
+    <div id="navbar-mobile" class="md:hidden hidden px-4 pb-3">
+        <a href="{% url 'main:show_main' %}" class="block py-2 hover:text-indigo-200">Home</a>
+        <a href="{% url 'main:create_item' %}" class="block py-2 hover:text-indigo-200">Add Item</a>
+        <a href="?filter=all" class="block py-2 hover:text-indigo-200">All Items</a>
+        <a href="?filter=my" class="block py-2 hover:text-indigo-200">My Items</a>
+        {% if user.is_authenticated %}
+            <span class="block py-2">Hi, <span class="font-semibold">{{ user.username }}</span></span>
+            <a href="{% url 'main:logout' %}" class="block py-2 text-red-300 hover:text-red-500">Logout</a>
+        {% else %}
+            <a href="{% url 'main:login' %}" class="block py-2 text-indigo-100 hover:text-indigo-300">Login</a>
+            <a href="{% url 'main:register' %}" class="block py-2 text-green-200 hover:text-green-400">Register</a>
+        {% endif %}
+    </div>
+</nav>
+<script>
+    // Simple toggle for mobile navbar
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('navbar-toggle');
+        const menu = document.getElementById('navbar-mobile');
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                menu.classList.toggle('hidden');
+            });
+        }
+    });
+</script>
+
+Penjelasan:
+- Navbar responsif: menu utama (`md:flex`) untuk desktop, menu mobile (`md:hidden`) muncul saat tombol hamburger diklik.
+- Tombol login/register hanya muncul jika user belum login, tombol logout dan username muncul jika sudah login.
+- Menggunakan Tailwind CSS utility classes untuk warna, spacing, dan responsivitas.
+- Script JS sederhana untuk toggle menu mobile.
+
+Pastikan:
+- Sudah mengaktifkan `{% load static %}` di atas template jika menggunakan file statis.
+- Navbar ini bisa ditempatkan di `base.html` agar muncul di semua halaman.
+
+
+
+2. Jika terdapat beberapa CSS selector untuk suatu elemen HTML, jelaskan urutan prioritas pengambilan CSS selector tersebut!
+### Urutan Prioritas CSS Selector (CSS Specificity)
+
+Jika suatu elemen HTML memiliki beberapa CSS selector yang mengaturnya, browser akan menentukan aturan mana yang diterapkan berdasarkan **specificity** (tingkat kekhususan) dan urutan kemunculan. Berikut urutan prioritasnya dari yang terendah ke tertinggi:
+
+1. Selector Universal, Elemen, dan Pseudo-elemen
+    - Contoh: `*`, `div`, `h1`, `::before`
+    - Specificity: 0-0-1
+
+2. Selector Class, Attribute, dan Pseudo-class
+    - Contoh: `.menu`, `[type="text"]`, `:hover`, `:focus`
+    - Specificity: 0-1-0
+
+3. Selector ID
+    - Contoh: `#header`, `#main-content`
+    - Specificity: 1-0-0
+
+4. Inline Style
+    - Contoh: `<div style="color: red;">`
+    - Specificity: 1-0-0-0 (paling tinggi kecuali !important)
+
+5. **!important**
+    - Aturan dengan `!important` akan mengalahkan semua aturan lain, kecuali jika ada aturan lain dengan `!important` dan specificity lebih tinggi.
+
+#### Cara Kerja:
+- Jika ada beberapa aturan yang berlaku, browser membandingkan specificity (ID > class/attribute/pseudo-class > elemen).
+- Jika specificity sama, aturan yang muncul **terakhir** di CSS akan diterapkan (aturan “cascade”).
+- Inline style selalu mengalahkan selector di file CSS, kecuali ada `!important` di file CSS.
+- `!important` mengalahkan semua kecuali ada aturan lain dengan `!important` dan specificity lebih tinggi.
+
+#### Contoh:
+```css
+p { color: blue; }              /* specificity: 0-0-1 */
+.text { color: green; }         /* specificity: 0-1-0 */
+#main { color: orange; }        /* specificity: 1-0-0 */
+p { color: red !important; }    /* specificity: 0-0-1 + !important */
+```
+Jika ada `<p id="main" class="text">Hello</p>`, warna yang diterapkan adalah **merah** karena ada `!important`. Jika `!important` dihapus, maka warna orange dari `#main` yang diterapkan karena specificity ID lebih tinggi.
+
+#### Ringkasan Urutan Prioritas:
+1. Inline style (`style=""`)
+2. Selector dengan ID
+3. Selector dengan class, attribute, pseudo-class
+4. Selector elemen dan pseudo-elemen
+5. Urutan kemunculan di CSS (cascade)
+6. `!important` mengalahkan semua, kecuali specificity lebih tinggi dengan `!important` juga
+
+
+3. Mengapa responsive design menjadi konsep yang penting dalam pengembangan aplikasi web? Berikan contoh aplikasi yang sudah dan belum menerapkan responsive design, serta jelaskan mengapa!
+### Pentingnya Responsive Design dalam Pengembangan Aplikasi Web
+
+Responsive design memastikan tampilan dan fungsi aplikasi web tetap optimal di berbagai perangkat (desktop, tablet, smartphone). Ini penting karena:
+
+- Pengguna Beragam Perangkat: Mayoritas pengguna mengakses web lewat ponsel. Tanpa responsive design, tampilan bisa rusak, teks sulit dibaca, dan navigasi jadi tidak nyaman.
+- Pengalaman Pengguna (UX): Responsive design meningkatkan kenyamanan, mempercepat akses, dan mengurangi bounce rate.
+- SEO: Google memprioritaskan situs yang mobile-friendly dalam hasil pencarian.
+- Efisiensi Pengembangan: Satu basis kode untuk semua perangkat, lebih mudah maintenance dan update.
+
+#### Contoh Aplikasi yang Sudah Responsive
+- Twitter: Tampilan menyesuaikan otomatis di desktop dan mobile, navigasi tetap mudah, konten tetap terbaca jelas.
+- Tokopedia: Baik di desktop maupun mobile, layout, gambar, dan tombol tetap proporsional dan mudah diakses.
+
+#### Contoh Aplikasi yang Belum Responsive
+- Situs web sekolah lama: Banyak website sekolah atau institusi lama yang hanya didesain untuk desktop, sehingga di ponsel harus di-zoom, tombol terlalu kecil, dan layout berantakan.
+- Aplikasi internal perusahaan lawas: Beberapa aplikasi ERP lama hanya optimal di desktop, tidak bisa digunakan dengan baik di tablet/ponsel.
+
+#### Kesimpulan
+Tanpa responsive design, aplikasi web akan kehilangan banyak pengguna mobile dan terlihat tidak profesional. Responsive design kini menjadi standar wajib dalam pengembangan web modern.
+
+
+
+4. Jelaskan perbedaan antara margin, border, dan padding, serta cara untuk mengimplementasikan ketiga hal tersebut!
+ 
+### Perbedaan Margin, Border, dan Padding serta Cara Implementasinya
+
+Margin, border, dan padding adalah tiga properti CSS yang mengatur ruang di sekitar dan di dalam elemen HTML. Berikut penjelasan dan cara implementasinya:
+
+#### 1. Margin
+- Definisi: Ruang di luar border elemen, memisahkan elemen dari elemen lain di sekitarnya.
+- Implementasi:
+    ```css
+    .box {
+        margin: 20px; /* semua sisi */
+        margin-top: 10px;
+        margin-right: 15px;
+        margin-bottom: 10px;
+        margin-left: 15px;
+    }
+    ```
+
+#### 2. Border
+- Definisi: Garis tepi yang mengelilingi padding dan konten elemen.
+- Implementasi:
+    ```css
+    .box {
+        border: 2px solid #333; /* ketebalan, jenis garis, warna */
+        border-radius: 8px;      /* sudut border membulat */
+    }
+    ```
+
+#### 3. Padding
+- Definisi: Ruang di dalam border, antara border dan konten elemen.
+- Implementasi:
+    ```css
+    .box {
+        padding: 16px; /* semua sisi */
+        padding-top: 8px;
+        padding-right: 12px;
+        padding-bottom: 8px;
+        padding-left: 12px;
+    }
+    ```
+
+#### Ilustrasi Box Model
++---------------------------+
+|        Margin             |
+|  +---------------------+  |
+|  |      Border         |  |
+|  |  +---------------+  |  |
+|  |  |   Padding     |  |  |
+|  |  | +-----------+ |  |  |
+|  |  | | Content   | |  |  |
+|  |  | +-----------+ |  |  |
+|  |  +---------------+  |  |
+|  +---------------------+  |
++---------------------------+
+```
+
+#### Contoh HTML & CSS
+
+```html
+<div class="box">Contoh Box Model</div>
+
+
+```css
+.box {
+    margin: 24px;
+    border: 2px solid #4f46e5;
+    padding: 16px;
+    background: #f1f5f9;
+}
+```
+
+Kesimpulan:  
+- Margin: ruang luar elemen  
+- Border: garis tepi elemen  
+- Padding: ruang dalam antara border dan konten  
+Ketiganya diatur lewat properti CSS pada elemen HTML.
+
+
+5. Jelaskan konsep flex box dan grid layout beserta kegunaannya!
+
+### Konsep Flexbox dan Grid Layout Beserta Kegunaannya
+
+#### 1. Flexbox (Flexible Box Layout)
+Flexbox adalah modul CSS yang dirancang untuk membuat tata letak satu dimensi (baris atau kolom) menjadi lebih mudah dan fleksibel. Flexbox memudahkan pengaturan, perataan, dan distribusi ruang antar item dalam sebuah container, bahkan ketika ukurannya tidak diketahui atau dinamis.
+
+Kegunaan Flexbox:
+- Membuat layout baris atau kolom yang responsif.
+- Menyusun dan meratakan item secara horizontal atau vertikal.
+- Mengatur jarak antar elemen secara otomatis.
+- Mengatur urutan tampilan elemen tanpa mengubah urutan HTML.
+
+Contoh:
+```css
+.container {
+    display: flex;
+    justify-content: space-between; /* rata kanan-kiri */
+    align-items: center;            /* rata tengah vertikal */
+}
+```
+
+#### 2. Grid Layout
+CSS Grid Layout adalah modul CSS yang memungkinkan pembuatan tata letak dua dimensi (baris dan kolom) secara mudah dan powerful. Grid cocok untuk membangun layout kompleks seperti dashboard, galeri, atau halaman web dengan banyak area.
+
+Kegunaan Grid Layout:
+- Membuat layout dua dimensi (baris dan kolom) secara simultan.
+- Membagi halaman menjadi area grid yang fleksibel.
+- Mengatur ukuran, posisi, dan urutan elemen dengan mudah.
+- Cocok untuk desain responsif dan layout kompleks.
+
+Contoh:
+```css
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr; /* tiga kolom */
+    grid-gap: 16px;                    /* jarak antar grid */
+}
+```
+
+#### Perbandingan Singkat
+- Flexbox: Satu dimensi (baris *atau* kolom), cocok untuk navbar, card list, dll.
+- Grid: Dua dimensi (baris *dan* kolom), cocok untuk layout halaman utama, galeri, dsb.
+
+Kesimpulan:  
+Flexbox dan Grid sama-sama memudahkan pembuatan layout responsif dan modern. Pilih Flexbox untuk tata letak satu arah, dan Grid untuk tata letak dua arah yang lebih kompleks.

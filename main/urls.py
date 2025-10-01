@@ -4,6 +4,8 @@ from . import views
 from main.views import register
 from main.views import login_user
 from main.views import logout_user
+from main.views import edit_item
+from main.views import delete_item
 
 app_name = 'main'
 
@@ -18,5 +20,7 @@ urlpatterns = [
     path('register/', register, name='register'),
     path('login/', login_user, name='login'),
     path('logout/', logout_user, name='logout'),
+    path('item/<uuid:pk>/edit', edit_item, name='edit_item'),
+    path('item/<uuid:id>/delete', delete_item, name='delete_item'),
 
 ]
