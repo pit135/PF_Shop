@@ -1,0 +1,152 @@
+<!-- Modal -->
+<div id="crudModal" class="hidden fixed inset-0 z-50 w-full flex items-center justify-center bg-gray-800 bg-opacity-50">
+  <div id="crudModalContent" class="bg-white rounded-lg shadow-lg w-5/6 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 max-h-screen overflow-y-auto">
+    <!-- Modal header -->
+    <div class="flex items-center justify-between p-4 border-b">
+      <div>
+        <h3 class="text-xl font-semibold text-gray-900">
+          Create New Item
+        </h3>
+        <p class="text-sm text-gray-600 mt-1">Add a product to your PF Shop</p>
+      </div>
+      <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center" onclick="hideModal()">
+        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+
+    <!-- Modal body -->
+    <div class="px-6 py-4 space-y-6 form-style">
+      <form id="itemForm" action="{% url 'main:create_item' %}" method="post">
+        {% csrf_token %}
+        <!-- Form Fields -->
+        <div class="mb-4">
+          <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+          <input type="text" id="name" name="name" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Item name" required>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+            <input type="number" id="price" name="price" min="0" step="1" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="e.g. 34500000" required>
+          </div>
+          <div>
+            <label for="stock" class="block text-sm font-medium text-gray-700">Stock</label>
+            <input type="number" id="stock" name="stock" min="0" step="1" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="e.g. 5" required>
+          </div>
+          <div>
+            <label for="brand" class="block text-sm font-medium text-gray-700">Brand</label>
+            <input type="text" id="brand" name="brand" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Adidas / Nike" required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="size" class="block text-sm font-medium text-gray-700">Size</label>
+            <input type="text" id="size" name="size" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="e.g. XS-XL / US8.5">
+          </div>
+          <div>
+            <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+            <select id="category" name="category" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" required>
+              <option value="">Choose a category</option>
+              <option value="jersey">Jersey</option>
+              <option value="shoes">Shoes</option>
+              <option value="ball">Ball</option>
+              <option value="accessory">Accessory</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+          <textarea id="description" name="description" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Describe the item..." required></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label for="thumbnail" class="block text-sm font-medium text-gray-700">Thumbnail URL</label>
+          <input type="url" id="thumbnail" name="thumbnail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="mb-1">
+          <div class="flex items-center">
+            <input id="is_featured" name="is_featured" type="checkbox" class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded">
+            <label for="is_featured" class="ml-2 text-sm font-medium text-gray-900">Featured Item</label>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal footer -->
+    <div class="flex flex-col sm:flex-row gap-4 p-6 border-t border-gray-200 rounded-b">
+      <button type="button" id="cancelButton" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center" onclick="hideModal()">Cancel</button>
+      <button type="submit" id="submitItem" form="itemForm" class="order-1 sm:order-2 flex-1 bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700 transition-colors">Create Item</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Modal functions ===
+function showModal() { document.getElementById('crudModal').classList.remove('hidden'); }
+function hideModal() { document.getElementById('crudModal').classList.add('hidden'); }
+
+// === CSRF Helper ===
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+  return null;
+}
+const csrftoken = getCookie('csrftoken');
+
+// === Form submit via AJAX ===
+let isSubmitting = false;
+
+document.getElementById('itemForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (isSubmitting) return; // Prevent multiple submissions
+  isSubmitting = true;
+
+  const form = e.currentTarget;
+  const btn = document.getElementById('submitItem');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const fd = new FormData(form);
+
+    // Normalize data (e.g., checkbox, price & stock)
+    if (!fd.has('is_featured')) fd.set('is_featured', '');
+    ['price','stock'].forEach(k => fd.set(k, String(parseInt(fd.get(k) || '0', 10))));
+
+    const res = await fetch(form.action, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': csrftoken || '',
+      },
+      body: fd
+    });
+
+    const ct = res.headers.get('Content-Type') || '';
+    const json = ct.includes('application/json') ? await res.json() : null;
+
+    if (!res.ok) throw new Error(json?.detail || 'Failed to create item');
+
+    // On success, close modal and reload page (or refresh grid)
+    hideModal();
+    window.location.reload(); // Or append item without reloading
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Failed to add item');
+  } finally {
+    isSubmitting = false;
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+});
+</script>

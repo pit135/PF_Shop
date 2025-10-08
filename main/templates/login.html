@@ -14,31 +14,13 @@
       </div>
 
       <!-- Form Errors Display -->
-      {% if form.non_field_errors %}
-        <div class="mb-6">
-          {% for error in form.non_field_errors %}
-            <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
-              {{ error }}
-            </div>
-          {% endfor %}
+      <div id="form-errors" class="mb-6 hidden">
+        <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
+          <!-- Error messages will be shown here -->
         </div>
-      {% endif %}
+      </div>
 
-      {% if form.errors %}
-        <div class="mb-6">
-          {% for field, errors in form.errors.items %}
-            {% if field != '__all__' %}
-              {% for error in errors %}
-                <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700 mb-2">
-                  <strong>{{ field|title }}:</strong> {{ error }}
-                </div>
-              {% endfor %}
-            {% endif %}
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      <form method="POST" action="" class="space-y-6">
+      <form id="loginForm" method="POST" action="" class="space-y-6">
         {% csrf_token %}
         
         <div>
@@ -71,25 +53,7 @@
       </form>
 
       <!-- Messages Display -->
-      {% if messages %}
-        <div class="mt-6">
-          {% for message in messages %}
-            <div 
-              class="
-                px-4 py-3 rounded-md text-sm border
-                {% if message.tags == 'success' %}
-                  bg-green-50 border-green-200 text-green-700
-                {% elif message.tags == 'error' %}
-                  bg-red-50 border-red-200 text-red-700
-                {% else %}
-                  bg-gray-50 border-gray-200 text-gray-700
-                {% endif %}
-              ">
-              {{ message }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
+      <div id="response-messages" class="mt-6"></div>
 
       <div class="mt-6 text-center pt-6 border-t border-gray-200">
         <p class="text-gray-500 text-sm">
@@ -102,4 +66,77 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Function to handle form submission with AJAX
+  document.getElementById('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();  // Prevent the form from submitting normally
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    // Clear previous errors and messages
+    document.getElementById('form-errors').classList.add('hidden');
+    document.getElementById('response-messages').innerHTML = '';
+
+    try {
+      // Send the AJAX request
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData,
+      });
+
+      const result = await response.json();  // Assuming JSON response from the server
+
+      if (response.ok) {
+        // Show success message
+        document.getElementById('response-messages').innerHTML = `
+          <div class="px-4 py-3 rounded-md text-sm border bg-green-50 border-green-200 text-green-700">
+            ${result.message || 'Login successful!'}
+          </div>
+        `;
+
+        // Redirect or update the page after successful login
+        setTimeout(() => {
+          window.location.href = "{% url 'main:show_main' %}";  
+        }, 1500);
+      } else {
+        // Show error messages
+        let errorMessages = '';
+        if (result.errors) {
+          for (const [field, errors] of Object.entries(result.errors)) {
+            errors.forEach(error => {
+              errorMessages += `
+                <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700 mb-2">
+                  <strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${error}
+                </div>
+              `;
+            });
+          }
+        } else {
+          errorMessages = `
+            <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
+              ${result.message || 'An error occurred. Please try again.'}
+            </div>
+          `;
+        }
+        document.getElementById('form-errors').innerHTML = errorMessages;
+        document.getElementById('form-errors').classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Error during AJAX request:', error);
+      document.getElementById('form-errors').innerHTML = `
+        <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
+          There was an issue with the request. Please try again.
+        </div>
+      `;
+      document.getElementById('form-errors').classList.remove('hidden');
+    }
+  });
+</script>
+
 {% endblock content %}

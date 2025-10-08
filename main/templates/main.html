@@ -18,13 +18,18 @@
       <p class="text-gray-600">Everything you want in football is right here</p>
     </div>
 
+      <!-- Button to open modal -->
+    <button onclick="showModal()" class="inline-flex items-center px-4 py-2 bg-white text-green-600 font-semibold outline outline-2 outline-green-600 outline-offset-[-2px] rounded-md hover:bg-green-600 hover:text-white transition-colors mb-4">
+      Create Item by AJAX
+    </button>
+
     <!-- Filter Section -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-white rounded-lg border border-gray-200 p-4 shadow">
       <div class="flex space-x-3 mb-4 sm:mb-0">
-        <a href="?" class="{% if request.GET.filter == 'all' or not request.GET.filter %} bg-green-600 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
+        <a id="filter-all" class="bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-700">
           All Items
         </a>
-        <a href="?filter=my" class="{% if request.GET.filter == 'my' %} bg-green-600 text-white{% else %}bg-white text-gray-700 border border-gray-300{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
+        <a id="filter-my" class="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white">
           My Items
         </a>
       </div>
@@ -35,80 +40,207 @@
       {% endif %}
     </div>
 
-    <!-- Item Grid -->
-    {% if not item_list %}
-      <div class="bg-white rounded-lg border border-gray-200 p-12 text-center shadow">
-        <div class="w-32 h-32 mx-auto mb-4">
-          <img src="{% static 'image/no-items.png' %}" alt="No items available" class="w-full h-full object-contain">
-        </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-        <p class="text-gray-500 mb-6">Be the first to add an item to the shop.</p>
-        <a href="{% url 'main:create_item' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-          + Add Item
-        </a>
+    <!-- Loading State -->
+    <div id="loading" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden">
+      <svg class="animate-spin h-8 w-8 text-green-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <p class="text-gray-600 mt-3">Loading items...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="hidden"></div>
+
+    <!-- Items Grid -->
+    <div id="grid" class="hidden"></div>
+
+    <!-- Empty State -->
+    <div id="empty" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden shadow">
+      <div class="w-32 h-32 mx-auto mb-4">
+        <img src="{% static 'image/no-items.png' %}" alt="No items available" class="w-full h-full object-contain">
       </div>
-    {% else %}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for item in item_list %}
-        <div class="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden flex flex-col relative">
-          
-          <!-- Image -->
-          <div class="relative h-70 w-full overflow-hidden">
-            {% if item.thumbnail %}
-              <img src="{{ item.thumbnail }}" alt="{{ item.name }}" 
-                   class="w-full h-full object-cover object-center">
-            {% endif %}
-            
-            <!-- Category Badge -->
-            <span class="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
-              {{ item.get_category_display }}
-            </span>
-            
-            <!-- Featured Badge -->
-            {% if item.is_featured %}
-            <span class="absolute top-3 right-3 bg-yellow-200 text-yellow-900 text-xs font-medium px-2 py-1 rounded shadow">
-              ⭐ Featured
-            </span>
-            {% endif %}
-          </div>
-          
-          <!-- Content -->
-          <div class="flex-1 flex flex-col p-4">
-            <p class="text-sm text-gray-500 mb-2">
-              {{ item.created_at|date:"M d, Y" }}
-              • {{ item.views|default:0 }} views
-            </p>
-            
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">
-              {{ item.name }}
-            </h2>
-            
-            <p class="text-gray-600 text-sm flex-1">
-              {{ item.description }}
-            </p>
-            
-            <!-- Actions -->
-             <!-- <span class="absolute top-3 right-3 bg-yellow-200 text-yellow-900 text-xs font-medium px-2 py-1 rounded shadow">
-              ⭐ Featured
-            </span> -->
-            <div class="mt-6 flex items-center justify-between text-sm border-t pt-4">
-              <a href="{% url 'main:show_item' item.id %}" class="bg-green-600 text-white text-xs font-medium px-2 py-1 rounded shadow hover:underline">
-                Detail
-              </a>
-              <div class="flex gap-4">
-                <a href="{% url 'main:edit_item' item.pk %}" class="bg-gray-500 text-white text-xs font-medium px-2 py-1 rounded shadow hover:bg-gray-600">
-                  Edit
-                </a>
-                <a href="{% url 'main:delete_item' item.pk %}" class="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded shadow hover:text-red-800 font-medium">
-                  Delete
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    {% endif %}
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No items found</h3>
+      <p class="text-gray-500 mb-6">Be the first to add an item to the shop.</p>
+      <a href="{% url 'main:create_item' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+        + Add Item
+      </a>
+    </div>
   </div>
 </div>
+
+<script>
+// Configuration
+const ITEMS_API_ENDPOINT = "{% url 'main:show_json' %}";
+const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
+
+// DOM Elements
+const loadingSpinner = document.getElementById('loading');
+const errorMessage = document.getElementById('error');
+const emptyStateDisplay = document.getElementById('empty');
+const itemsGridContainer = document.getElementById('grid');
+const showAllItemsButton = document.getElementById('filter-all');
+const showMyItemsButton = document.getElementById('filter-my');
+
+// State Variables
+let activeFilter = 'all';
+let allItemsData = [];
+
+// Update filter button appearance
+function updateFilterButtonsAppearance() {
+  if (!showAllItemsButton || !showMyItemsButton) return;
+  
+  if (activeFilter === 'all') {
+    showAllItemsButton.className = 'bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-700';
+    showMyItemsButton.className = 'bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white';
+  } else {
+    showMyItemsButton.className = 'bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-700';
+    showAllItemsButton.className = 'bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md font-medium transition-colors hover:bg-green-600 hover:text-white';
+  }
+}
+
+// Show/hide sections
+function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+  loadingSpinner.classList.toggle('hidden', !showLoading);
+  errorMessage.classList.toggle('hidden', !showError);
+  emptyStateDisplay.classList.toggle('hidden', !showEmpty);
+  itemsGridContainer.classList.toggle('hidden', !showGrid);
+
+  if (showGrid) {
+    itemsGridContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+  }
+}
+
+// Build item card
+function buildItemCardElement(item) {
+  // URL (dirender oleh Django di template)
+  const detailLink = `{% url 'main:show_item' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.id);
+  const editLink   = `{% url 'main:edit_item'  '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.id);
+  const deleteLink = `{% url 'main:delete_item' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.id);
+
+  // helper sanitizer (fallback kalau DOMPurify belum ada)
+  const _escape = (s)=>String(s??'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const S = (v)=> (window.DOMPurify ? DOMPurify.sanitize(String(v ?? '')) : _escape(v));
+
+  // data aman
+  const name        = S(item.name);
+  const description = S(item.description);
+  const categoryRaw = String(item.category || '');
+  const category    = S(categoryRaw);
+  const thumbnail   = S(item.thumbnail || '');
+  const createdTxt  = item.created_at && !isNaN(new Date(item.created_at))
+    ? S(new Date(item.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}))
+    : '';
+
+  const categoryLabel = S(categoryRaw ? categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1) : '');
+  const featuredBadge = item.is_featured
+    ? `<span class='absolute top-3 right-3 bg-yellow-200 text-yellow-900 text-xs font-medium px-2 py-1 rounded shadow'>⭐ Featured</span>`
+    : '';
+
+  const thumbnailHtml = item.thumbnail
+    ? `<img src='${thumbnail}' alt='${name}' class='w-full h-full object-cover object-center'>`
+    : `<div class='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center'></div>`;
+
+  const editDeleteButtons = (typeof CURRENT_USER_ID !== 'undefined') && Number(CURRENT_USER_ID) === Number(item.user_id)
+    ? `<div class="flex gap-4">
+         <a href="${editLink}" class="bg-gray-500 text-white text-xs font-medium px-2 py-1 rounded shadow hover:bg-gray-600">Edit</a>
+         <a href="${deleteLink}" class="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded shadow hover:text-red-800 font-medium" onclick="return confirm('Are you sure you want to delete this item?')">Delete</a>
+       </div>`
+    : '';
+
+  const cardHTML = `
+    <div class="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden flex flex-col relative">
+      <div class="relative h-70 w-full overflow-hidden">
+        ${thumbnailHtml}
+        <span class="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
+          ${categoryLabel}
+        </span>
+        ${featuredBadge}
+      </div>
+      <div class="flex-1 flex flex-col p-4">
+        <p class="text-sm text-gray-500 mb-2">${createdTxt}</p>
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">${name}</h2>
+        <p class="text-gray-600 text-sm flex-1">${description}</p>
+        <div class="mt-6 flex items-center justify-between text-sm border-t pt-4">
+          <a href="${detailLink}" class="bg-green-600 text-white text-xs font-medium px-2 py-1 rounded shadow hover:underline">Detail</a>
+          ${editDeleteButtons}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = cardHTML.trim();
+  return wrapper.firstChild;
+}
+
+// Render items
+function renderAllItemCards(items) {
+  itemsGridContainer.innerHTML = '';
+  items.forEach(item => {
+    const card = buildItemCardElement(item);
+    itemsGridContainer.appendChild(card);
+  });
+}
+
+// Filter and display
+function filterAndDisplayItems() {
+  updateFilterButtonsAppearance();
+  
+  const filteredItems = activeFilter === 'all'
+    ? allItemsData
+    : allItemsData.filter(i => Number(i.user_id) === Number(CURRENT_USER_ID));
+
+  if (filteredItems.length === 0) {
+    displayPageSection({ showEmpty: true });
+  } else {
+    renderAllItemCards(filteredItems);
+    displayPageSection({ showGrid: true });
+  }
+}
+
+// Fetch from server
+async function fetchItemsFromServer() {
+  try {
+    displayPageSection({ showLoading: true });
+    const response = await fetch(ITEMS_API_ENDPOINT, { headers: { 'Accept': 'application/json' } });
+    if (!response.ok) throw new Error('Failed to fetch items');
+    const data = await response.json();
+    allItemsData = data || [];
+    filterAndDisplayItems();
+  } catch (error) {
+    console.error('Error:', error);
+    displayPageSection({ showError: true });
+  }
+}
+
+// Event Handlers
+showAllItemsButton.addEventListener('click', () => {
+  activeFilter = 'all';
+  filterAndDisplayItems();
+});
+showMyItemsButton.addEventListener('click', () => {
+  activeFilter = 'my';
+  filterAndDisplayItems();
+});
+
+// Init
+fetchItemsFromServer();
+
+// Dengarkan event setelah item dibuat (dipublish dari addItemEntry)
+document.addEventListener('itemAdded', function (e) {
+  // e.detail berisi payload JSON item baru (kalau view mengembalikan JSON)
+  // console.log('Item baru:', e.detail);
+
+  // Refresh data tanpa reload halaman
+  if (typeof fetchItemsFromServer === 'function') {
+    fetchItemsFromServer();
+  }
+});
+
+
+</script>
+
 {% endblock content %}

@@ -5,13 +5,15 @@ from .models import Item
 from django.http import HttpResponse
 from django.core import serializers
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import datetime
-from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils.html import strip_tags
 
 @login_required(login_url='/login')
 def show_main(request):
@@ -31,18 +33,16 @@ def show_main(request):
     return render(request, "main.html", context)
 
 def create_item(request):
-    form = ItemForm(request.POST or None)
-
-    if form.is_valid() and request.method == 'POST':
-        item_entry = form.save(commit = False)
-        item_entry.user = request.user
-        item_entry.save()
-        return redirect('main:show_main')
-
-    context = {
-        'form': form
-    }
-    return render(request, "add_item.html", context)
+    if request.method == 'POST':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            form.save()  # Simpan item baru
+            return JsonResponse({'message': 'Item created successfully!'}, status=200)
+        else:
+            return JsonResponse({'errors': form.errors}, status=400)
+    
+    form = ItemForm()
+    return render(request, "add_item.html", {'form': form})
 
 @login_required(login_url='/login')
 def show_item(request, id):
@@ -55,9 +55,26 @@ def show_xml(request):
     return HttpResponse(xml_data, content_type="application/xml")
 
 def show_json(request):
-    items = Item.objects.all()                      # ambil semua Item
-    json_data = serializers.serialize("json", items)
-    return HttpResponse(json_data, content_type="application/json")
+    item_list = Item.objects.all()
+    data = [
+        {
+            'id': str(item.id),
+            'name': item.name,
+            'price': item.price,
+            'stock': item.stock,
+            'brand': item.brand,
+            'size': item.size,
+            'category': item.category,
+            'is_featured': item.is_featured,
+            'description': item.description,
+            'thumbnail': item.thumbnail,
+            'created_at': item.created_at.isoformat() if item.created_at else None,
+            'user_id': item.user_id,
+        }
+        for item in item_list
+    ]
+
+    return JsonResponse(data, safe=False)
 
 def show_xml_by_id(request, id):
     item_qs = Item.objects.filter(pk=id)                 # queryset (bisa kosong jika tidak ada)
@@ -65,21 +82,38 @@ def show_xml_by_id(request, id):
     return HttpResponse(xml_data, content_type="application/xml")
 
 def show_json_by_id(request, id):
-    item = Item.objects.get(pk=id)                       # akan error 404 jika id tidak ada
-    json_data = serializers.serialize("json", [item])    # bungkus list untuk serialize satu objek
-    return HttpResponse(json_data, content_type="application/json")
-
+    try:
+        item = Item.objects.select_related('user').get(pk=id)
+        data = {
+            'id': str(item.id),
+            'name': item.name,
+            'price': item.price,
+            'stock': item.stock,
+            'brand': item.brand,
+            'size': item.size,
+            'category': item.category,
+            'is_featured': item.is_featured,
+            'description': item.description,
+            'thumbnail': item.thumbnail,
+            'created_at': item.created_at.isoformat() if item.created_at else None,
+            'user_id': item.user_id,
+            'user_username': item.user.username if item.user_id else None,
+        }
+        return JsonResponse(data)
+    except Item.DoesNotExist:
+        return JsonResponse({'detail': 'Not found'}, status=404)
+    
 def register(request):
-    form = UserCreationForm()
-
-    if request.method == "POST":
+    if request.method == 'POST':
         form = UserCreationForm(request.POST)
+        
         if form.is_valid():
             form.save()
-            messages.success(request, 'Your account has been successfully created!')
-            return redirect('main:login')
-    context = {'form':form}
-    return render(request, 'register.html', context)
+            return JsonResponse({'message': 'Account created successfully!'}, status=200)
+        else:
+            return JsonResponse({'errors': form.errors}, status=400)
+
+    return render(request, "register.html", {'form': form})
 
 def login_user(request):
    if request.method == 'POST':
@@ -87,15 +121,15 @@ def login_user(request):
 
       if form.is_valid():
         user = form.get_user()
-        login(request, user)
-        response = HttpResponseRedirect(reverse("main:show_main"))
-        response.set_cookie('last_login', str(datetime.datetime.now()))
-        return response
+        login(request, user)  # Login user
+        return JsonResponse({'message': 'Login successful!'}, status=200)  # Return success message
+      else:
+        # If form is not valid, return error messages
+        return JsonResponse({'errors': form.errors}, status=400)
 
    else:
-      form = AuthenticationForm(request)
-   context = {'form': form}
-   return render(request, 'login.html', context)
+      form = AuthenticationForm(request)  # On GET request, create an empty form
+   return render(request, "login.html", {'form': form})  # Render login page on GET request
 
 
 def logout_user(request):
@@ -106,19 +140,111 @@ def logout_user(request):
 
 def edit_item(request, pk):
     item = get_object_or_404(Item, pk=pk)
-    form = ItemForm(request.POST or None, instance=item)
-    if form.is_valid() and request.method == 'POST':
-        form.save()
-        return redirect('main:show_main')
 
-    context = {
-        'form': form
-    }
-
-    return render(request, "edit_item.html", context)
-
+    if request.method == 'POST':
+        form = ItemForm(request.POST, instance=item)
+        
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'message': 'Item updated successfully!'}, status=200)
+        else:
+            return JsonResponse({'errors': form.errors}, status=400)
+    
+    form = ItemForm(instance=item)
+    return render(request, "edit_item.html", {'form': form})
 
 def delete_item(request, id):
-    item = get_object_or_404(Item, pk=id)
-    item.delete()
-    return HttpResponseRedirect(reverse('main:show_main'))
+    try:
+        # Cek jika item ada
+        item = get_object_or_404(Item, pk=id)
+        item.delete()  # Hapus item
+
+        # Mengembalikan respons JSON jika penghapusan berhasil
+        return JsonResponse({'message': 'Item deleted successfully!'}, status=200)
+
+    except Item.DoesNotExist:
+        # Mengembalikan respons error jika item tidak ditemukan
+        return JsonResponse({'message': 'Item not found'}, status=404)
+    
+@csrf_exempt
+@require_POST
+def add_item_entry_ajax(request):
+    # # ambil & normalisasi data POST
+    name        = strip_tags(request.POST.get("name") or "").strip()
+    price_raw   = strip_tags(request.POST.get("price"))
+    stock_raw   = strip_tags(request.POST.get("stock"))
+    brand       = strip_tags(request.POST.get("brand") or "").strip()
+    size        = strip_tags(request.POST.get("size") or "").strip()                  # optional
+    category    = request.POST.get("category")
+    is_featured = (request.POST.get("is_featured") in ["on", "true", "True", "1"])
+    description = strip_tags(request.POST.get("description") or "").strip()
+    thumbnail   = (request.POST.get("thumbnail") or "").strip() or None     # optional
+    user        = request.user
+
+    # validasi sederhana
+    errors = {}
+    if not name:
+        errors["name"] = "This field is required."
+    if price_raw in (None, ""):
+        errors["price"] = "This field is required."
+    else:
+        try:
+            price = int(price_raw)
+        except (TypeError, ValueError):
+            errors["price"] = "Must be an integer."
+
+    if stock_raw in (None, ""):
+        errors["stock"] = "This field is required."
+    else:
+        try:
+            stock = int(stock_raw)
+        except (TypeError, ValueError):
+            errors["stock"] = "Must be an integer."
+
+    if not brand:
+        errors["brand"] = "This field is required."
+
+    # validasi pilihan kategori
+    valid_categories = dict(Item.CATEGORY_CHOICES).keys()
+    if not category or category not in valid_categories:
+        errors["category"] = f"Invalid category. Must be one of: {', '.join(valid_categories)}"
+
+    if not description:
+        errors["description"] = "This field is required."
+
+    if errors:
+        return JsonResponse({"ok": False, "errors": errors}, status=400)
+
+    # create item
+    item = Item.objects.create(
+        user=user,
+        name=name,
+        price=price,
+        stock=stock,
+        brand=brand,
+        size=size,
+        category=category,
+        is_featured=is_featured,
+        description=description,
+        thumbnail=thumbnail,
+    )
+
+    # response JSON (cocok dengan show_json_by_id kamu)
+    return JsonResponse({
+        "ok": True,
+        "id": str(item.id),
+        "name": item.name,
+        "price": item.price,
+        "stock": item.stock,
+        "brand": item.brand,
+        "size": item.size,
+        "category": item.category,
+        "is_featured": item.is_featured,
+        "description": item.description,
+        "thumbnail": item.thumbnail,
+        "created_at": item.created_at.isoformat() if item.created_at else None,
+        "user_id": item.user_id,
+        "user_username": item.user.username if item.user_id else None,
+    }, status=201)
+
+

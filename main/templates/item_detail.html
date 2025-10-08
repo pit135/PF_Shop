@@ -3,77 +3,214 @@
 {% load humanize %}
 
 {% block meta %}
-<title>{{ item.name }} - PF Shop</title>
+<title>Item Detail - PF Shop</title>
 {% endblock meta %}
 
 {% block content %}
-<div class="bg-green-50 w-full pt-16 min-h-screen shadow-inner">
-    <div class="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 py-8">
-        
-        <!-- Back Navigation -->
-        <div class="mb-6">
-            <a href="{% url 'main:show_main' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                ← Back to Shop
-            </a>
-        </div>
-        
-        <!-- Item Detail -->
-        <article class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            
-            <!-- Header -->
-            <div class="p-6 sm:p-8">
-                <div class="flex flex-wrap items-center gap-2 mb-4">
-                    <span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-green-600 text-white">
-                        {{ item.get_category_display }}
-                    </span>
-                    {% if item.is_featured %}
-                        <span class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">
-                            Featured
-                        </span>
-                    {% endif %}
-                </div>
-                
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4">
-                    {{ item.name }}
-                </h1>
-                
-                <div class="flex flex-wrap items-center text-sm text-gray-500 gap-4">
-                    <time datetime="{{ item.created_at|date:'c' }}">
-                        {{ item.created_at|date:"M j, Y g:i A" }}
-                    </time>
-                    <span>Rp{{ item.price|intcomma }}</span>
-                    <span>{{ item.stock }} pcs in stock</span>
-                </div>
-            </div>
+<div id="item-detail-root"
+     data-endpoint="{% url 'main:show_json_by_id' item.id %}"     
+     data-media-root="{% get_media_prefix %}"                      
+     class="bg-green-50 w-full pt-16 min-h-screen shadow-inner">
 
-            <!-- Thumbnail -->
-            {% if item.thumbnail %}
-                <div class="px-6 sm:px-8">
-                    <img src="{{ item.thumbnail }}" 
-                        alt="{{ item.name }}" 
-                        class="max-w-full h-auto object-contain rounded-lg bg-gray-100 mx-auto block">
-                </div>
-            {% endif %}
+  <div class="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 py-8">
 
-            <!-- Content -->
-            <div class="p-6 sm:p-8">
-                <div class="prose prose-lg max-w-none">
-                    <div class="text-gray-700 leading-relaxed whitespace-pre-line text-base sm:text-lg">
-                        {{ item.description }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Extra Info -->
-            <div class="border-t border-gray-200 p-6 sm:p-8 bg-gray-50">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <p><strong>Brand:</strong> {{ item.brand }}</p>
-                    {% if item.size %}
-                        <p><strong>Size:</strong> {{ item.size }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </article>
+    <!-- Back Navigation -->
+    <div class="mb-6">
+      <a href="{% url 'main:show_main' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+        ← Back to Shop
+      </a>
     </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+      <svg class="animate-spin h-8 w-8 text-green-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <p class="text-gray-600 mt-3">Loading item detail...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden">
+      <div class="w-16 h-16 mx-auto mb-4">
+        <div class="text-red-500 text-5xl">⚠️</div>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">Failed to load item</h3>
+      <p class="text-gray-500">Please try again later.</p>
+    </div>
+
+    <!-- Item Content -->
+    <article id="item-content" class="bg-white rounded-lg border border-gray-200 overflow-hidden hidden">
+
+      <!-- Header -->
+      <div class="p-6 sm:p-8">
+        <div id="badges-container" class="flex flex-wrap items-center gap-2 mb-4">
+          <!-- Dynamic badges here -->
+        </div>
+
+        <h1 id="item-name" class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4">
+          <!-- Item name -->
+        </h1>
+
+        <div class="flex flex-wrap items-center text-sm text-gray-500 gap-4">
+          <time id="item-date"></time>
+          <span id="item-price"></span>
+          <span id="item-stock"></span>
+        </div>
+      </div>
+
+      <!-- Thumbnail -->
+      <div id="thumbnail-container" class="px-6 sm:px-8 hidden">
+        <img id="item-thumbnail"
+             src=""
+             alt=""
+             loading="eager"
+             class="w-full h-64 sm:h-80 lg:h-96 object-contain rounded-lg bg-gray-100 mx-auto block">
+      </div>
+
+      <!-- Content -->
+      <div class="p-6 sm:p-8">
+        <div class="prose prose-lg max-w-none">
+          <div id="item-description" class="text-gray-700 leading-relaxed whitespace-pre-line text-base sm:text-lg">
+            <!-- Description -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Extra Info -->
+      <div class="border-t border-gray-200 p-6 sm:p-8 bg-gray-50">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p><strong>Brand:</strong> <span id="item-brand">Loading...</span></p>
+          <p id="item-size-wrapper" class="hidden"><strong>Size:</strong> <span id="item-size"></span></p>
+        </div>
+      </div>
+    </article>
+  </div>
 </div>
+
+<!-- AJAX & Thumbnail Resolver -->
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const root = document.getElementById('item-detail-root');
+  const endpoint   = root?.dataset?.endpoint;
+  const mediaRoot  = root?.dataset?.mediaRoot || '';
+  const placeholder = root?.dataset?.placeholder || '';
+
+  const $loading  = document.getElementById('loading-state');
+  const $error    = document.getElementById('error-state');
+  const $content  = document.getElementById('item-content');
+
+  const $badges   = document.getElementById('badges-container');
+  const $name     = document.getElementById('item-name');
+  const $date     = document.getElementById('item-date');
+  const $price    = document.getElementById('item-price');
+  const $stock    = document.getElementById('item-stock');
+
+  const $thumbWrap= document.getElementById('thumbnail-container');
+  const $thumb    = document.getElementById('item-thumbnail');
+
+  const $desc     = document.getElementById('item-description');
+  const $brand    = document.getElementById('item-brand');
+  const $sizeWrap = document.getElementById('item-size-wrapper');
+  const $size     = document.getElementById('item-size');
+
+  const show = ($el) => $el.classList.remove('hidden');
+  const hide = ($el) => $el.classList.add('hidden');
+
+  const fmtCurrency = (n, currency='IDR') => {
+    try {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+    } catch { return `Rp ${Number(n||0).toLocaleString('id-ID')}`; }
+  };
+
+  const parseDate = (s) => { const d = s ? new Date(s) : null; return d && !isNaN(d) ? d : null; };
+  const timefmt = (s) => { const d = parseDate(s); return d ? d.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' }) : ''; };
+
+  const makeBadge = (text, color='gray') => {
+    const span = document.createElement('span');
+    const colorMap = {
+      green:'bg-green-100 text-green-800 ring-green-200',
+      red:'bg-red-100 text-red-800 ring-red-200',
+      blue:'bg-blue-100 text-blue-800 ring-blue-200',
+      amber:'bg-amber-100 text-amber-900 ring-amber-200',
+      gray:'bg-gray-100 text-gray-800 ring-gray-200',
+    };
+    span.className = `px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ${colorMap[color]||colorMap.gray}`;
+    span.textContent = text; return span;
+  };
+
+  // Resolve URL media relatif -> absolut
+  const resolveMedia = (url) => {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url)) return url;       // absolute
+    if (url.startsWith('/')) return url;             // sudah /media/...
+    if (mediaRoot) return mediaRoot.replace(/\/+$/, '') + '/' + url.replace(/^\/+/, '');
+    return url;
+  };
+
+  try {
+    if (!endpoint) throw new Error('Endpoint JSON tidak ditemukan.');
+    show($loading); hide($error); hide($content);
+
+    const res = await fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // ====== mapping data ======
+    const name = data.name || data.title || 'Untitled Item';
+    const description = data.description || '';
+    const price = data.price ?? data.unit_price ?? 0;
+    const stock = data.stock ?? data.quantity ?? 0;
+    const brand = data.brand || '';
+    const size = data.size || data.variant_size || '';
+    const createdAt = data.created_at || data.published_at || data.updated_at || null;
+
+    const rawThumb =
+      data.thumbnail_url || data.thumbnail || data.image_url || data.image ||
+      data.photo || data.picture || data.cover || data.cover_url || '';
+
+    const thumbnail = resolveMedia(rawThumb);
+
+    // ====== header ======
+    $name.textContent = name;
+    $date.textContent = timefmt(createdAt);
+    $price.textContent = price !== null && price !== undefined ? fmtCurrency(price) : '';
+    $stock.textContent = `Stock: ${Number(stock)}`;
+
+    // badges
+    $badges.innerHTML = '';
+    $badges.appendChild(makeBadge(stock > 0 ? 'In Stock' : 'Out of Stock', stock > 0 ? 'green' : 'red'));
+    if (brand) $badges.appendChild(makeBadge(brand, 'blue'));
+    if (createdAt) {
+      const d = parseDate(createdAt), now = new Date();
+      const diffDays = d ? Math.floor((now - d) / (1000*60*60*24)) : NaN;
+      if (!isNaN(diffDays) && diffDays <= 7) $badges.appendChild(makeBadge('New', 'amber'));
+    }
+
+    // ====== thumbnail ======
+    if (thumbnail || placeholder) {
+      $thumb.onload = () => show($thumbWrap);
+      $thumb.onerror = () => {
+        if (placeholder) { $thumb.src = placeholder; show($thumbWrap); }
+        else { hide($thumbWrap); }
+      };
+      $thumb.src = thumbnail || placeholder;
+      $thumb.alt = name;
+    } else {
+      hide($thumbWrap);
+    }
+
+    // ====== body ======
+    $desc.textContent = description;
+    $brand.textContent = brand || '-';
+    if (size) { $size.textContent = size; show($sizeWrap); } else { hide($sizeWrap); }
+
+    hide($loading); hide($error); show($content);
+
+  } catch (err) {
+    console.error(err);
+    hide($loading); hide($content); show($error);
+  }
+});
+</script>
 {% endblock content %}

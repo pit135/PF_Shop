@@ -2446,3 +2446,73 @@ b) Kustomisasi Halaman
 - Semua logic dicek di backend juga, bukan cuma di tampilan.
 - Aku tes semua fitur: tambah, edit, hapus, filter, login/logout, dan pastiin tampilannya konsisten di HP & desktop.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+======================================================= TUGAS 5 ================================================================
+
+
+1. erbedaan antara Synchronous Request dan Asynchronous Request:
+
+Synchronous Request:
+=> pada request synchronous, proses eksekusi dilakukan secara berurutan, artinya setiap request harus menunggu hingga request sebelumnya selesai diproses sebelum melanjutkan ke request berikutnya, ini bisa membuat aplikasi terasa lebih lambat karena browser atau server harus menunggu satu proses selesai sebelum memulai yang lain
+
+=> contoh: mengisi form di halaman dan menunggu halaman penuh refresh setelah submit.
+
+Asynchronous Request:
+=> pada request asynchronous, proses dapat berjalan secara paralel, artinya, aplikasi dapat mengirimkan request ke server dan melanjutkan tugas lainnya tanpa harus menunggu balasan dari server, hal ini membuat aplikasi lebih responsif karena tidak perlu menunggu seluruh halaman untuk dimuat kembali setiap kali melakukan aksi
+
+=> contoh: menggunakan AJAX untuk mengirimkan data dan memperbarui bagian tertentu dari halaman tanpa perlu memuat ulang seluruh halaman
+
+2. Bagaimana AJAX Bekerja di Django (Alur Request–Response)?
+
+=> AJAX (Asynchronous JavaScript and XML) bekerja dengan mengirimkan request ke server tanpa memuat ulang halaman, berikut adalah alur request-response di Django menggunakan AJAX:
+1. pengguna melakukan aksi pada halaman, seperti klik tombol atau submit form (biasanya dengan JavaScript)
+2. JavaScript (AJAX) mengirimkan request ke server menggunakan metode GET atau POST, data dikirim secara asinkron ke endpoint Django
+3. Django menerima request, melakukan proses yang diperlukan (misalnya query ke database), dan menghasilkan response (biasanya dalam format JSON)
+4. JavaScript menerima response dari server dan memperbarui bagian tertentu dari halaman tanpa memuat ulang seluruh halaman
+
+=> contoh alur:
+pengguna mengklik tombol "Load More", maka AJAX akan mengirimkan request ke server untuk mengambil data lebih banyak
+Django akan mengirimkan data (misalnya daftar artikel baru) sebagai respons
+JavaScript di browser kemudian memperbarui tampilan halaman dengan data baru tanpa refresh halaman penuh
+
+3. Keuntungan Menggunakan AJAX Dibandingkan Render Biasa di Django:
+
+pengalaman pengguna lebih cepat, karena tidak perlu memuat ulang seluruh halaman, bagian tertentu dari halaman dapat diperbarui lebih cepat
+interaksi lebih responsif, halaman bisa memperbarui konten secara dinamis tanpa gangguan atau pemuatan ulang halaman
+menghemat bandwidth, hanya data yang dibutuhkan yang dikirim dan diterima, bukan seluruh halaman
+pengurangan beban server, server hanya perlu memproses dan mengirimkan data tertentu, bukan merender seluruh halaman HTML lagi
+
+
+4. Cara Memastikan Keamanan saat Menggunakan AJAX untuk Fitur Login dan Register di Django:
+
+=> untuk memastikan keamanan saat menggunakan AJAX untuk login dan register di Django, beberapa langkah penting yang harus diikuti adalah:
+validasi server-side: selalu lakukan validasi data login dan register di sisi server, meskipun kita telah melakukan validasi sisi klien dengan JavaScript
+gunakan CSRF token: Django secara default menggunakan CSRF (Cross-Site Request Forgery) untuk melindungi dari serangan ini, pastikan token CSRF disertakan dalam setiap request AJAX
+sertakan token CSRF dalam header request atau form data yang dikirim ke server menggunakan AJAX
+gunakan HTTPS: pastikan seluruh komunikasi data antara server dan client dilakukan menggunakan HTTPS untuk mencegah penyadapan data
+enkripsi password: pastikan password yang dikirim melalui AJAX di-enkripsi dengan metode yang aman, dan simpan hanya hash dari password di server
+pengamanan endpoint: pastikan endpoint untuk login dan register aman dan tidak rentan terhadap SQL Injection atau eksploitasi lain
+
+
+5. Bagaimana AJAX Mempengaruhi Pengalaman Pengguna (User Experience) pada Website?
+
+ pengalaman pengguna lebih cepat dan responsif: AJAX memungkinkan pembaruan bagian tertentu dari halaman secara dinamis tanpa memuat ulang seluruh halaman, yang membuat aplikasi terasa lebih cepat
+interaksi lebih lancar: pengguna dapat berinteraksi dengan aplikasi web tanpa gangguan, seperti menunggu halaman dimuat ulang
+mengurangi waktu tunggu: misalnya, pengguna dapat mengirimkan form atau melakukan pencarian, dan hasilnya akan langsung muncul tanpa menunggu refresh halaman
+efisiensi: AJAX membantu mengurangi beban pada server dan penggunaan bandwidth karena hanya data yang diperlukan yang dikirim dan diterima
+pengalaman lebih modern: website yang menggunakan AJAX memberi kesan modern dan interaktif, membuat pengguna lebih nyaman berinteraksi dengan situs
+AJAX, secara keseluruhan, membantu menciptakan aplikasi web yang lebih dinamis, cepat, dan efisien
+
