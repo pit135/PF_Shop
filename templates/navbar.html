@@ -17,13 +17,19 @@
         </div>
         
         <!-- Desktop Navigation -->
-        <div class="hidden md:flex items-center space-x-8">
-          <a href="/" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+        <div class="hidden md:flex flex-1 justify-center items-center space-x-10">
+          <!-- Home -->
+          <a href="{% url 'main:show_main' %}"
+            class="text-gray-700 hover:text-gray-900 font-medium transition-colors">
             Home
           </a>
-          <a href="{% url 'main:create_item' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+
+          <!-- Create Item -->
+          <button type="button"
+                  onclick="openProductModal('create')"
+                  class="text-gray-700 hover:text-gray-900 font-medium transition-colors">
             Create Item
-          </a>
+          </button>
         </div>
         
         <!-- Desktop User Section -->
@@ -63,14 +69,11 @@
     <div class="mobile-menu hidden md:hidden bg-white border-t border-gray-200">
       <div class="px-6 py-4 space-y-4">
         <!-- Mobile Navigation Links -->
-        <div class="space-y-1">
-          <a href="/" class="block text-gray-600 hover:text-gray-900 font-medium py-3 transition-colors">
-            Home
-          </a>
-          <a href="{% url 'main:create_item' %}" class="block text-gray-600 hover:text-gray-900 font-medium py-3 transition-colors">
-            Create Item
-          </a>
-        </div>
+        <button type="button"
+        onclick="openProductModal('create')"
+        class="block w-full text-left text-gray-600 hover:text-gray-900 font-medium py-3 transition-colors">
+        Create Item
+      </button>
         
         <!-- Mobile User Section -->
         <div class="border-t border-gray-200 pt-4">

@@ -8,40 +8,101 @@
 {% block content %}
 <div class="bg-gray-50 w-full min-h-screen">
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Back Navigation -->
+
+    <!-- Back -->
     <div class="mb-6">
       <a href="{% url 'main:show_main' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
         ← Back to Shop
       </a>
     </div>
-    
-    <!-- Form -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6 sm:p-8 form-style">
+
+    <!-- Card -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6 sm:p-8">
       <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Add New Item</h1>
-        <p class="text-gray-600">Fill in the details to add a new product to the shop</p>
+        <p class="text-gray-600">Fill in the details to add a new product to the shop.</p>
       </div>
-      
-      <form id="itemForm" method="POST" class="space-y-6">
+
+      <!-- kirim ke endpoint AJAX -->
+      <form id="itemForm" action="{% url 'main:add_item_entry_ajax' %}" method="post" class="space-y-6">
         {% csrf_token %}
-        {% for field in form %}
-          <div>
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-              {{ field.label }}
-            </label>
-            <div class="w-full">
-              {{ field }}
-            </div>
-            {% if field.help_text %}
-              <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
-            {% endif %}
-            {% for error in field.errors %}
-              <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-            {% endfor %}
-          </div>
-        {% endfor %}
-        
+
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <input type="text" name="name"
+                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                 required>
+        </div>
+
+        <!-- Price -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+          <input type="number" name="price"
+                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                 required>
+        </div>
+
+        <!-- Stock -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+          <input type="number" name="stock" value="0"
+                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                 required>
+        </div>
+
+        <!-- Brand -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+          <input type="text" name="brand"
+                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                 required>
+        </div>
+
+        <!-- Size -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Size</label>
+          <input type="text" name="size"
+                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select name="category"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required>
+            <option value="">---------</option>
+            <option value="jersey">Jersey</option>
+            <option value="shoes">Shoes</option>
+            <option value="ball">Ball</option>
+            <option value="accessory">Accessory</option>
+          </select>
+        </div>
+
+        <!-- Is featured -->
+        <div class="flex items-center gap-2">
+          <input type="checkbox" name="is_featured" id="is_featured"
+                 class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+          <label for="is_featured" class="text-sm font-medium text-gray-700">Is featured</label>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea name="description" rows="3"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+        </div>
+
+        <!-- Thumbnail -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Thumbnail</label>
+          <input type="url" name="thumbnail"
+                 class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                 placeholder="https://...">
+        </div>
+
+        <!-- Buttons -->
         <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
           <a href="{% url 'main:show_main' %}" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center">
             Cancel
@@ -52,81 +113,72 @@
         </div>
       </form>
 
-      <!-- Messages Display -->
+      <!-- messages -->
       <div id="response-messages" class="mt-6"></div>
-
     </div>
   </div>
 </div>
 
 <script>
-  // Function to handle form submission via AJAX
-  document.getElementById('itemForm').addEventListener('submit', async function (e) {
-    e.preventDefault();  // Prevent the form from submitting normally
+// ambil csrf
+function getCookie(name){
+  const value=`; ${document.cookie}`;
+  const parts=value.split(`; ${name}=`);
+  if(parts.length===2) return decodeURIComponent(parts.pop().split(';').shift());
+}
+const csrftoken = getCookie('csrftoken');
 
-    // Clear previous messages
-    document.getElementById('response-messages').innerHTML = '';
-    
-    const form = e.target;
-    const formData = new FormData(form);
+document.getElementById('itemForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('submitItem');
+  const msgs = document.getElementById('response-messages');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  msgs.innerHTML = '';
 
-    try {
-      // Send AJAX request
-      const response = await fetch(form.action, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: formData,
-      });
+  const fd = new FormData(e.target);
 
-      const result = await response.json();  // Assuming JSON response from server
+  try{
+    const resp = await fetch(e.target.action, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrftoken },
+      body: fd
+    });
+    const data = await resp.json();
 
-      if (response.ok) {
-        // Show success message
-        document.getElementById('response-messages').innerHTML = `
-          <div class="px-4 py-3 rounded-md text-sm border bg-green-50 border-green-200 text-green-700">
-            ${result.message || 'Item created successfully!'}
-          </div>
-        `;
-        
-        // Optionally, redirect or update page after success
-        setTimeout(() => {
-          window.location.href = '{% url "main:show_main" %}';  // Redirect to the main page
-        }, 1500);
-
-      } else {
-        // Show error messages
-        let errorMessages = '';
-        if (result.errors) {
-          for (const [field, errors] of Object.entries(result.errors)) {
-            errors.forEach(error => {
-              errorMessages += `
-                <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700 mb-2">
-                  <strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${error}
-                </div>
-              `;
-            });
-          }
-        } else {
-          errorMessages = `
-            <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
-              ${result.message || 'An error occurred. Please try again.'}
-            </div>
-          `;
+    if(resp.ok){
+      msgs.innerHTML = `
+        <div class="p-3 rounded-md bg-green-50 border border-green-200 text-green-700">
+          Item created successfully!
+        </div>`;
+      setTimeout(()=>window.location.href="{% url 'main:show_main' %}", 900);
+    }else{
+      let html = '';
+      if(data.errors){
+        for(const [field, errs] of Object.entries(data.errors)){
+          errs.forEach(err=>{
+            html += `<div class="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 mb-2">
+                      <strong>${field}:</strong> ${err}
+                    </div>`;
+          });
         }
-        document.getElementById('response-messages').innerHTML = errorMessages;
+      }else{
+        html = `<div class="p-3 rounded-md bg-red-50 border border-red-200 text-red-700">
+                  Failed to create item.
+                </div>`;
       }
-    } catch (error) {
-      console.error('Error during AJAX request:', error);
-      document.getElementById('response-messages').innerHTML = `
-        <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
-          There was an issue with the request. Please try again.
-        </div>
-      `;
+      msgs.innerHTML = html;
     }
-  });
+  }catch(err){
+    console.error(err);
+    msgs.innerHTML = `
+      <div class="p-3 rounded-md bg-red-50 border border-red-200 text-red-700">
+        Network error. Please try again.
+      </div>`;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Save Item';
+  }
+});
 </script>
-
 {% endblock %}

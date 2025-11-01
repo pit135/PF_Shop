@@ -1,131 +1,172 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block meta %}
 <title>Edit Item - PF Shop</title>
 {% endblock meta %}
 
 {% block content %}
-<div class="bg-gray-50 w-full min-h-screen">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Back Navigation -->
-    <div class="mb-6">
-      <a href="{% url 'main:show_main' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-        ← Back to Shop
-      </a>
-    </div>
-    
-    <!-- Form -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6 sm:p-8 form-style">
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit Item</h1>
-        <p class="text-gray-600">Update your product details</p>
-      </div>
-      
-      <form id="editItemForm" method="POST" class="space-y-6">
+<div class="bg-gray-50 min-h-screen w-full">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <!-- Back -->
+    <a href="{% url 'main:show_main' %}" class="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
+      ← Back to Shop
+    </a>
+
+    <!-- Card -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-1">Edit Item</h1>
+      <p class="text-gray-500 mb-6">Update your product details</p>
+
+      <form method="POST" class="space-y-5">
         {% csrf_token %}
-        {% for field in form %}
-          <div>
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-              {{ field.label }}
-            </label>
-            <div class="w-full">
-              {{ field }}
-            </div>
-            {% if field.help_text %}
-              <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
-            {% endif %}
-            {% for error in field.errors %}
-              <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+
+        <!-- Name -->
+        <div>
+          <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <input
+            id="id_name"
+            name="name"
+            type="text"
+            value="{{ form.name.value|default_if_none:'' }}"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          {% if form.name.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Price -->
+        <div>
+          <label for="id_price" class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+          <input
+            id="id_price"
+            name="price"
+            type="number"
+            value="{{ form.price.value|default_if_none:'' }}"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          {% if form.price.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.price.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Stock -->
+        <div>
+          <label for="id_stock" class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+          <input
+            id="id_stock"
+            name="stock"
+            type="number"
+            value="{{ form.stock.value|default_if_none:'' }}"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          {% if form.stock.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.stock.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Brand -->
+        <div>
+          <label for="id_brand" class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+          <input
+            id="id_brand"
+            name="brand"
+            type="text"
+            value="{{ form.brand.value|default_if_none:'' }}"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          {% if form.brand.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.brand.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Size -->
+        <div>
+          <label for="id_size" class="block text-sm font-medium text-gray-700 mb-1">Size</label>
+          <input
+            id="id_size"
+            name="size"
+            type="text"
+            value="{{ form.size.value|default_if_none:'' }}"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          {% if form.size.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.size.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label for="id_category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select
+            id="id_category"
+            name="category"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+            {% for val, label in form.category.field.choices %}
+              <option value="{{ val }}" {% if form.category.value == val %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
-          </div>
-        {% endfor %}
-        
+          </select>
+          {% if form.category.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.category.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Is featured -->
+        <div class="flex items-center gap-2">
+          <input
+            id="id_is_featured"
+            name="is_featured"
+            type="checkbox"
+            {% if form.is_featured.value %}checked{% endif %}
+            class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+          <label for="id_is_featured" class="text-sm text-gray-700">Is featured</label>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea
+            id="id_description"
+            name="description"
+            rows="3"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">{{ form.description.value|default_if_none:'' }}</textarea>
+          {% if form.description.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.description.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Thumbnail -->
+        <div>
+          <label for="id_thumbnail" class="block text-sm font-medium text-gray-700 mb-1">Thumbnail</label>
+          <input
+            id="id_thumbnail"
+            name="thumbnail"
+            type="url"
+            value="{{ form.thumbnail.value|default_if_none:'' }}"
+            placeholder="https://..."
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          {% if form.thumbnail.errors %}
+            <p class="text-xs text-red-600 mt-1">{{ form.thumbnail.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Footer -->
         <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
-          <a href="{% url 'main:show_main' %}" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center">
+          <a href="{% url 'main:show_main' %}"
+             class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 text-center">
             Cancel
           </a>
-          <button type="submit" id="submitItem" class="order-1 sm:order-2 flex-1 bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700 transition-colors">
+          <button type="submit"
+                  class="flex-1 bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700 transition-colors">
             Update Item
           </button>
         </div>
-      </form>
 
-      <!-- Messages Display -->
-      <div id="response-messages" class="mt-6"></div>
+        {% if form.non_field_errors %}
+          <p class="text-sm text-red-600 mt-2">{{ form.non_field_errors }}</p>
+        {% endif %}
+      </form>
     </div>
   </div>
 </div>
-
-<script>
-  // Function to handle form submission via AJAX
-  document.getElementById('editItemForm').addEventListener('submit', async function (e) {
-    e.preventDefault();  // Prevent normal form submission
-
-    // Clear previous messages
-    document.getElementById('response-messages').innerHTML = '';
-
-    const form = e.target;
-    const formData = new FormData(form);
-
-    try {
-      // Send AJAX request
-      const response = await fetch(form.action, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: formData,
-      });
-
-      const result = await response.json();  // Assuming JSON response from server
-
-      if (response.ok) {
-        // Show success message
-        document.getElementById('response-messages').innerHTML = `
-          <div class="px-4 py-3 rounded-md text-sm border bg-green-50 border-green-200 text-green-700">
-            ${result.message || 'Item updated successfully!'}
-          </div>
-        `;
-        
-        // Optionally, redirect or update page after success
-        setTimeout(() => {
-          window.location.href = '{% url "main:show_main" %}';  // Redirect to the main page
-        }, 1500);
-
-      } else {
-        // Show error messages
-        let errorMessages = '';
-        if (result.errors) {
-          for (const [field, errors] of Object.entries(result.errors)) {
-            errors.forEach(error => {
-              errorMessages += `
-                <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700 mb-2">
-                  <strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${error}
-                </div>
-              `;
-            });
-          }
-        } else {
-          errorMessages = `
-            <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
-              ${result.message || 'An error occurred. Please try again.'}
-            </div>
-          `;
-        }
-        document.getElementById('response-messages').innerHTML = errorMessages;
-      }
-    } catch (error) {
-      console.error('Error during AJAX request:', error);
-      document.getElementById('response-messages').innerHTML = `
-        <div class="px-4 py-3 rounded-md text-sm border bg-red-50 border-red-200 text-red-700">
-          There was an issue with the request. Please try again.
-        </div>
-      `;
-    }
-  });
-</script>
-
 {% endblock %}

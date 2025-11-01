@@ -16,14 +16,14 @@ urlpatterns = [
     path('add/', views.create_item, name='create_item'),  # form tambah item
     path('<uuid:id>/', views.show_item, name='show_item'), # detail item (UUID)
     path("xml/", views.show_xml, name="show_xml"),        # ← endpoint XML
-    path('json/', views.show_json, name='show_json'),   # ← endpoint JSON
     path("xml/<uuid:id>/", views.show_xml_by_id, name="show_xml_by_id"),
     path("json/<uuid:id>/", views.show_json_by_id, name="show_json_by_id"),
-    path('register/', register, name='register'),
-    path('login/', login_user, name='login'),
-    path('logout/', logout_user, name='logout'),
-    path('item/<uuid:id>/edit', edit_item, name='edit_item'),
-    path('item/<uuid:id>/delete', delete_item, name='delete_item'),
-    path("items/add-ajax/", add_item_entry_ajax, name="add_item_entry_ajax"),
+    path('register/', views.register, name='register'),
+    path('login/', views.login_user, name='login'),
+    path('logout/', views.logout_user, name='logout'),
+    path('item/<uuid:id>/delete', views.delete_item, name='delete_item'),
+    path('show-json/', views.show_json, name='show_json'),
+    path('add-item-entry-ajax/', views.add_item_entry_ajax, name='add_item_entry_ajax'),
+    path('edit-item/<uuid:id>/', views.edit_item, name='edit_item'),
 
 ]

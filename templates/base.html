@@ -11,7 +11,16 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
     <link rel="stylesheet" href="{% static 'css/global.css' %}"/>
 </head>
-
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toastCookie = document.cookie.split('; ').find(row => row.startsWith('toast='));
+  if (toastCookie) {
+    const message = decodeURIComponent(toastCookie.split('=')[1]);
+    if (message) showToast(message, 'success');
+    document.cookie = 'toast=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  }
+});
+</script>
 <body>
     {% block content %}
     {% endblock content %} 
