@@ -1,5 +1,5 @@
-from django.urls import path
-from main.views import show_main
+from django.urls import include, path
+from main.views import create_item_flutter, proxy_image, show_json, show_main
 from . import views
 from main.views import register
 from main.views import login_user
@@ -7,6 +7,7 @@ from main.views import logout_user
 from main.views import edit_item
 from main.views import delete_item
 from main.views import add_item_entry_ajax
+from .views import create_item_flutter
 
 
 app_name = 'main'
@@ -25,5 +26,11 @@ urlpatterns = [
     path('show-json/', views.show_json, name='show_json'),
     path('add-item-entry-ajax/', views.add_item_entry_ajax, name='add_item_entry_ajax'),
     path('edit-item/<uuid:id>/', views.edit_item, name='edit_item'),
+    path('auth/', include('authentication.urls')),
+    path('json/<uuid:id>/', views.show_json_by_id, name='show_json_by_id'),
+    path('json/', show_json, name='show_json'),  
+    path('proxy-image/', proxy_image, name='proxy_image'),
+    path('create-flutter/', create_item_flutter, name='create_item_flutter'),
+    path('logout/', views.logout, name='logout')
 
 ]
