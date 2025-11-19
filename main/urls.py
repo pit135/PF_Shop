@@ -7,8 +7,7 @@ from main.views import logout_user
 from main.views import edit_item
 from main.views import delete_item
 from main.views import add_item_entry_ajax
-from .views import create_item_flutter
-
+from .views import create_item_flutter, show_main, show_json, show_my_json
 
 app_name = 'main'
 
@@ -31,6 +30,8 @@ urlpatterns = [
     path('json/', show_json, name='show_json'),  
     path('proxy-image/', proxy_image, name='proxy_image'),
     path('create-flutter/', create_item_flutter, name='create_item_flutter'),
-    path('logout/', views.logout, name='logout')
+    path('logout/', views.logout, name='logout'),
+    path('show-json/', show_json, name='show_json'),
+    path('show-my-json/', show_my_json, name='show_my_json'),
 
 ]

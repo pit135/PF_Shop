@@ -11,18 +11,19 @@ from django.contrib.auth.decorators import login_required
 import datetime
 from django.urls import reverse
 from django.http import HttpResponseRedirect, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from datetime import datetime
 from django.utils.html import strip_tags
 import requests
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.html import strip_tags
-from django.http import JsonResponse
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Item 
+from django.http import HttpResponse
+from django.core import serializers
+from django.contrib.auth.decorators import login_required
+
+
 
 
 @login_required(login_url='/login/')
@@ -226,49 +227,53 @@ def proxy_image(request):
     
 @csrf_exempt
 def create_item_flutter(request):
+    """
+    Menerima POST dari Flutter dan membuat Item baru
+    DENGAN field user = request.user, supaya muncul di My Products.
+    """
     if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
+        data = json.loads(request.body)
 
-            name = strip_tags(data.get("name", ""))
-            description = strip_tags(data.get("description", ""))
-            thumbnail = data.get("thumbnail", "")
+        name = strip_tags(data.get("name", ""))
+        description = strip_tags(data.get("description", ""))
+        thumbnail = data.get("thumbnail", "")
 
-            # pastikan angka dikonversi ke int
-            price = int(data.get("price", 0))
-            stock = int(data.get("stock", 0))
+        # pastikan integer
+        price = int(data.get("price", 0) or 0)
+        stock = int(data.get("stock", 0) or 0)
 
-            brand = strip_tags(data.get("brand", ""))
-            size = strip_tags(data.get("size", ""))
-            category = data.get("category", "jersey")
-            is_featured = data.get("is_featured", False)
+        brand = strip_tags(data.get("brand", ""))
+        size = strip_tags(data.get("size", ""))
+        category = data.get("category", "jersey")
+        is_featured = data.get("is_featured", False)
 
-            # kalau belum login, biarkan user = None (model kamu null=True)
-            user = request.user if request.user.is_authenticated else None
+        user = request.user if request.user.is_authenticated else None
 
-            new_item = Item(
-                user=user,
-                name=name,
-                description=description,
-                thumbnail=thumbnail,
-                price=price,
-                stock=stock,
-                brand=brand,
-                size=size,
-                category=category,
-                is_featured=is_featured,
-            )
-            new_item.save()
+        item = Item(
+            user=user,
+            name=name,
+            description=description,
+            thumbnail=thumbnail,
+            price=price,
+            stock=stock,
+            brand=brand,
+            size=size,
+            category=category,
+            is_featured=is_featured,
+        )
+        item.save()
 
-            return JsonResponse({"status": "success"}, status=200)
-        except Exception as e:
-            # buat debugging kalau ada error di server
-            return JsonResponse(
-                {"status": "error", "message": str(e)},
-                status=400,
-            )
+        return JsonResponse({"status": "success"}, status=200)
 
-    return JsonResponse(
-        {"status": "error", "message": "Invalid method"},
-        status=405,
-    )
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
+
+
+@login_required
+def show_my_json(request):
+    """
+    Mengembalikan JSON HANYA item milik user yang sedang login.
+    Struktur JSON-nya sama dengan show_json biasa.
+    """
+    items = Item.objects.filter(user=request.user)
+    data = serializers.serialize("json", items)
+    return HttpResponse(data, content_type="application/json")
