@@ -109,53 +109,6 @@ def logout(request):
             "status": False,
             "message": "Logout failed."
         }, status=401)
-    
-
-@csrf_exempt
-def create_item_flutter(request):
-    # Pastikan request adalah POST
-    if request.method == 'POST':
-        try:
-            # 1. Baca dan parse JSON dari body request
-            data = json.loads(request.body)
-            
-            # 2. Ambil data dari JSON (Pastikan nama field sama persis!)
-            name = data.get("name")
-            description = data.get("description")
-            thumbnail = data.get("thumbnail")
-            # Pastikan tipe data int/bool dikonversi dengan aman
-            price = int(data.get("price", 0))
-            stock = int(data.get("stock", 0))
-            brand = data.get("brand")
-            size = data.get("size")
-            category = data.get("category")
-            is_featured = bool(data.get("is_featured", False))
-            
-            # 3. Buat dan simpan objek Item baru
-            new_product = Item.objects.create(
-                user=request.user, # Asumsi Anda menggunakan login_required
-                name=name,
-                description=description,
-                thumbnail=thumbnail,
-                price=price,
-                stock=stock,
-                brand=brand,
-                size=size,
-                category=category,
-                is_featured=is_featured,
-            )
-            
-            # 4. Beri respon sukses
-            return JsonResponse({'status': 'success', 'message': 'Produk berhasil disimpan!'})
-
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON format'}, status=400)
-        except Exception as e:
-            # Beri respon error jika ada masalah lain (misalnya validasi model gagal)
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
-    # Beri respon error jika bukan metode POST
-    return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
 
 @csrf_exempt
